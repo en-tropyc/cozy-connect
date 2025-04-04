@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import Airtable from 'airtable';
 import { authOptions } from '@/lib/auth';
 
-const MATCHES_TABLE_ID = 'tbl4jHhNHZVBhP4Up';
+const MATCHES_TABLE_ID = 'tblfmOco0ONZsxF1b';
 const PROFILES_TABLE_ID = 'tbl9Jj8pIUABtsXRo';  // Use the table ID instead of name
 
 // Define field names as constants to ensure consistency
@@ -232,6 +232,7 @@ export async function POST(request: Request) {
       const userProfile = userProfiles[0];
       console.log('Found user profile:', {
         id: userProfile.id,
+        name: userProfile.fields['Name 名子'],
         email: userProfile.fields['Email 電子信箱']
       });
 
@@ -253,9 +254,18 @@ export async function POST(request: Request) {
           );
         }
 
-        console.log('Swiped profile found:', {
-          id: swipedProfiles[0].id,
-          name: swipedProfiles[0].fields['Name 名子']
+        const swipedProfile = swipedProfiles[0];
+        console.log('Match participants:', {
+          swiper: {
+            id: userProfile.id,
+            name: userProfile.fields['Name 名子'],
+            email: userProfile.fields['Email 電子信箱']
+          },
+          swiped: {
+            id: swipedProfile.id,
+            name: swipedProfile.fields['Name 名子'],
+            email: swipedProfile.fields['Email 電子信箱']
+          }
         });
 
         // 7. Create match record

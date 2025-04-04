@@ -21,8 +21,15 @@ async function createMatchesTable() {
       },
       {
         name: 'Status',
-        type: 'singleLineText',
-        description: 'The status of the match (pending, accepted, etc.)'
+        type: 'singleSelect',
+        description: 'The status of the match',
+        options: {
+          choices: [
+            { name: 'pending' },
+            { name: 'accepted' },
+            { name: 'rejected' }
+          ]
+        }
       }
     ]);
 
