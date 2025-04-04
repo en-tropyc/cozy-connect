@@ -138,6 +138,16 @@ export interface Profile {
   location?: string;          // 🌏 Where are you from? 你從哪裡來？
 }
 
+// Fisher-Yates shuffle algorithm
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export const getProfiles = async (): Promise<Profile[]> => {
   try {
     const response = await fetch('/api/profiles');
@@ -150,7 +160,9 @@ export const getProfiles = async (): Promise<Profile[]> => {
       throw new Error(data.error || 'Failed to fetch profiles');
     }
 
-    return data.profiles;
+    // Shuffle all profiles
+    return shuffleArray(data.profiles);
+
   } catch (error) {
     console.error('Error fetching profiles:', error);
     throw error;
