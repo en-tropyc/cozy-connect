@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import Airtable from 'airtable';
 import { Profile } from '@/lib/airtable';
 
+// Profiles to exclude from results
+const BLACKLISTED_PROFILES = [
+  '☕️ Join Cozy Networking',
+  // 'Cozy Cowork Cafe'
+];
+
 export async function GET() {
   if (!process.env.AIRTABLE_API_KEY) {
     return NextResponse.json(
@@ -26,8 +32,14 @@ export async function GET() {
     const base = airtable.base(process.env.AIRTABLE_BASE_ID);
     const tableId = 'tbl9Jj8pIUABtsXRo';
     
+    // Create OR conditions for each blacklisted profile
+    const blacklistFilter = BLACKLISTED_PROFILES
+      .map(name => `{Name 名子} = '${name}'`)
+      .join(', ');
+    
     const records = await base(tableId)
       .select({
+        filterByFormula: `NOT(OR(${blacklistFilter}))`,
         fields: [
           'Name 名子',
           'Email 電子信箱',
@@ -63,6 +75,7 @@ export async function GET() {
       other: record.fields['Other'] as string,
       lastModified: record.fields['Last Modified'] as string,
       location: record.fields['🌏 Where are you from? 你從哪裡來？'] as string,
+      active: record.fields['Active'] as boolean
     }));
 
     return NextResponse.json({
