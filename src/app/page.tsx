@@ -6,20 +6,35 @@ import ProfileCard from '@/components/ProfileCard';
 import { Toaster, toast } from 'react-hot-toast';
 import { HeartIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { AnimatePresence } from 'framer-motion';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 
 export default function Home() {
+  const { data: session } = useSession();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ message: string; details?: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
-    const fetchProfiles = async () => {
+    const fetchUserProfileAndProfiles = async () => {
       try {
         console.log('Starting to fetch profiles...');
         const data = await getProfiles();
         console.log('Fetched profiles:', data);
-        setProfiles(data);
+        
+        // Find the current user's profile
+        const currentUserProfile = data.find(
+          profile => profile.email === session?.user?.email
+        );
+        setUserProfile(currentUserProfile || null);
+        
+        // Filter out the current user's profile from the list
+        const otherProfiles = data.filter(
+          profile => profile.email !== session?.user?.email
+        );
+        setProfiles(otherProfiles);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching profiles:', error);
@@ -33,8 +48,10 @@ export default function Home() {
       }
     };
 
-    fetchProfiles();
-  }, []);
+    if (session?.user?.email) {
+      fetchUserProfileAndProfiles();
+    }
+  }, [session]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -60,19 +77,79 @@ export default function Home() {
     setCurrentIndex((prev) => prev + 1);
   };
 
-  const handleSwipeRight = () => {
-    toast('Interested!', { 
-      icon: '❤️',
-      position: 'bottom-center',
-      className: 'bg-green-50 text-green-500 border border-green-100'
-    });
-    setCurrentIndex((prev) => prev + 1);
+  const handleSwipeRight = async () => {
+    try {
+      const response = await fetch('/api/matches', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          swipedProfileId: profiles[currentIndex].id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to create match');
+      }
+
+      toast('Interested!', { 
+        icon: '❤️',
+        position: 'bottom-center',
+        className: 'bg-green-50 text-green-500 border border-green-100'
+      });
+    } catch (error) {
+      console.error('Error creating match:', error);
+      toast.error('Failed to create match. Please try again.');
+    } finally {
+      setCurrentIndex((prev) => prev + 1);
+    }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome to Cozy Connect</h1>
+        <p className="text-gray-600 mb-8">Please sign in to start connecting with others.</p>
+      </div>
+    );
+  }
+
+  if (!userProfile) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Complete Your Profile</h1>
+          <p className="text-gray-600 mb-6">
+            Welcome to Cozy Connect! Before you can start connecting with others,
+            you need to create your profile.
+          </p>
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
+            <h2 className="text-lg font-semibold text-blue-800 mb-2">Why create a profile?</h2>
+            <ul className="text-blue-700 space-y-2">
+              <li>• Share your professional background</li>
+              <li>• Highlight your skills and interests</li>
+              <li>• Connect with like-minded professionals</li>
+              <li>• Find potential collaborators</li>
+            </ul>
+          </div>
+          <Link
+            href="/profile/create"
+            className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg text-center transition-colors"
+          >
+            Create Your Profile
+          </Link>
+        </div>
       </div>
     );
   }
