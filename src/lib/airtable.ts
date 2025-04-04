@@ -1,13 +1,31 @@
 import Airtable from 'airtable';
 
-// Initialize Airtable
-const airtable = new Airtable({ 
-  apiKey: process.env.AIRTABLE_API_KEY,
-  endpointUrl: 'https://api.airtable.com',
-});
+// Check if we're on the server side
+const isServer = typeof window === 'undefined';
 
-// Create and export the base instance
-export const base = airtable.base(process.env.AIRTABLE_BASE_ID || '');
+// Initialize Airtable only on server side
+let airtable: Airtable | null = null;
+let base: Airtable.Base | null = null;
+
+if (isServer) {
+  if (!process.env.AIRTABLE_API_KEY) {
+    throw new Error('AIRTABLE_API_KEY is required');
+  }
+  
+  airtable = new Airtable({ 
+    apiKey: process.env.AIRTABLE_API_KEY,
+    endpointUrl: 'https://api.airtable.com',
+  });
+
+  if (!process.env.AIRTABLE_BASE_ID) {
+    throw new Error('AIRTABLE_BASE_ID is required');
+  }
+
+  base = airtable.base(process.env.AIRTABLE_BASE_ID);
+}
+
+// Export the base instance
+export { base };
 
 export interface Profile {
   id: string;
@@ -35,6 +53,9 @@ export interface Profile {
 export const getProfiles = async (): Promise<Profile[]> => {
   try {
     const response = await fetch('/api/profiles');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const data = await response.json();
 
     if (!data.success) {

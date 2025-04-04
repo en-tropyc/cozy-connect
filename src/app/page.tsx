@@ -10,7 +10,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
 export default function Home() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -18,40 +18,34 @@ export default function Home() {
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
-    const fetchUserProfileAndProfiles = async () => {
+    if (status === 'loading') return;
+
+    const fetchData = async () => {
       try {
-        console.log('Starting to fetch profiles...');
-        const data = await getProfiles();
-        console.log('Fetched profiles:', data);
+        setLoading(true);
+        const fetchedProfiles = await getProfiles();
+        setProfiles(fetchedProfiles);
         
         // Find the current user's profile
-        const currentUserProfile = data.find(
-          profile => profile.email === session?.user?.email
-        );
-        setUserProfile(currentUserProfile || null);
-        
-        // Filter out the current user's profile from the list
-        const otherProfiles = data.filter(
-          profile => profile.email !== session?.user?.email
-        );
-        setProfiles(otherProfiles);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching profiles:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        if (session?.user?.email) {
+          const userProfile = fetchedProfiles.find(
+            profile => profile.email === session.user.email
+          );
+          setUserProfile(userProfile || null);
+        }
+      } catch (err) {
+        console.error('Error fetching profiles:', err);
         setError({
-          message: errorMessage,
-          details: error instanceof Error ? error.stack : undefined,
+          message: 'Failed to load profiles',
+          details: err instanceof Error ? err.message : 'Unknown error'
         });
-        toast.error(`Failed to load profiles: ${errorMessage}`);
+      } finally {
         setLoading(false);
       }
     };
 
-    if (session?.user?.email) {
-      fetchUserProfileAndProfiles();
-    }
-  }, [session]);
+    fetchData();
+  }, [session, status]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -108,9 +102,9 @@ export default function Home() {
     }
   };
 
-  if (loading) {
+  if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -119,8 +113,18 @@ export default function Home() {
   if (!session) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome to Cozy Connect</h1>
-        <p className="text-gray-600 mb-8">Please sign in to start connecting with others.</p>
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome to Cozy Connect</h1>
+          <p className="text-gray-600 mb-6">
+            Please sign in to start connecting with other professionals.
+          </p>
+          <Link
+            href="/auth/signin"
+            className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg text-center transition-colors"
+          >
+            Sign In
+          </Link>
+        </div>
       </div>
     );
   }
@@ -164,7 +168,12 @@ export default function Home() {
             {error.details}
           </pre>
         )}
-        <p className="text-sm text-gray-500 mt-4">Please check your Airtable configuration and try again.</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
