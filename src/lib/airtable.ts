@@ -136,6 +136,7 @@ export interface Profile {
   other?: string;             // Other
   lastModified?: string;      // Last Modified
   location?: string;          // 🌏 Where are you from? 你從哪裡來？
+  active?: boolean;           // Whether the profile should be shown
 }
 
 // Fisher-Yates shuffle algorithm
