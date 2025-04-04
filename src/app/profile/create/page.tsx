@@ -65,8 +65,33 @@ export default function CreateProfilePage() {
       return;
     }
 
+    // Validate required fields
     if (!formData.picture) {
       toast.error('Please upload a profile picture');
+      return;
+    }
+    if (!formData.name) {
+      toast.error('Please enter your name');
+      return;
+    }
+    if (!formData.fromLocation) {
+      toast.error('Please enter where you are from');
+      return;
+    }
+    if (!formData.shortIntro) {
+      toast.error('Please enter a short introduction');
+      return;
+    }
+    if (!formData.categories || formData.categories.length === 0) {
+      toast.error('Please select at least one category/skill');
+      return;
+    }
+    if (!formData.lookingFor) {
+      toast.error('Please enter what you are looking for');
+      return;
+    }
+    if (!formData.canOffer) {
+      toast.error('Please enter what you can offer');
       return;
     }
 
@@ -173,7 +198,7 @@ export default function CreateProfilePage() {
               
               <div>
                 <label htmlFor="picture" className="block text-sm font-medium text-gray-700">
-                  Profile Picture*
+                  Profile Picture <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="file"
@@ -199,7 +224,7 @@ export default function CreateProfilePage() {
 
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Name*
+                  Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -213,8 +238,23 @@ export default function CreateProfilePage() {
               </div>
 
               <div>
+                <label htmlFor="fromLocation" className="block text-sm font-medium text-gray-700">
+                  Where are you from? <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="fromLocation"
+                  name="fromLocation"
+                  required
+                  value={formData.fromLocation}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                />
+              </div>
+
+              <div>
                 <label htmlFor="shortIntro" className="block text-sm font-medium text-gray-700">
-                  Short Introduction*
+                  Short Introduction <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   id="shortIntro"
@@ -240,25 +280,13 @@ export default function CreateProfilePage() {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                 />
               </div>
-
-              <div>
-                <label htmlFor="fromLocation" className="block text-sm font-medium text-gray-700">
-                  Where are you from?
-                </label>
-                <input
-                  type="text"
-                  id="fromLocation"
-                  name="fromLocation"
-                  value={formData.fromLocation}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
-                />
-              </div>
             </div>
 
             {/* Categories */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900">Categories/Skills</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Categories/Skills <span className="text-red-500">*</span>
+              </h2>
               <div className="grid grid-cols-2 gap-4">
                 {CATEGORIES.map(category => (
                   <label
@@ -332,7 +360,7 @@ export default function CreateProfilePage() {
               
               <div>
                 <label htmlFor="lookingFor" className="block text-sm font-medium text-gray-700">
-                  What are you looking for?*
+                  What are you looking for? <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   id="lookingFor"
@@ -347,7 +375,7 @@ export default function CreateProfilePage() {
 
               <div>
                 <label htmlFor="canOffer" className="block text-sm font-medium text-gray-700">
-                  What can you offer?*
+                  What can you offer? <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   id="canOffer"
@@ -391,6 +419,9 @@ export default function CreateProfilePage() {
             </div>
 
             <div className="pt-4">
+              <p className="text-sm text-gray-500 mb-4">
+                Fields marked with <span className="text-red-500">*</span> are required
+              </p>
               <button
                 type="submit"
                 disabled={loading}
