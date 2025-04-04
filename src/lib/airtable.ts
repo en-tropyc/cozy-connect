@@ -1,3 +1,14 @@
+import Airtable from 'airtable';
+
+// Initialize Airtable
+const airtable = new Airtable({ 
+  apiKey: process.env.AIRTABLE_API_KEY,
+  endpointUrl: 'https://api.airtable.com',
+});
+
+// Create and export the base instance
+export const base = airtable.base(process.env.AIRTABLE_BASE_ID || '');
+
 export interface Profile {
   id: string;
   name: string;                 // Name 名子
