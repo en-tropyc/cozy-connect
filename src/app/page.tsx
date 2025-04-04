@@ -36,6 +36,21 @@ export default function Home() {
     fetchProfiles();
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (currentIndex >= profiles.length) return;
+      
+      if (e.key === 'ArrowLeft') {
+        handleSwipeLeft();
+      } else if (e.key === 'ArrowRight') {
+        handleSwipeRight();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, profiles.length]);
+
   const handleSwipeLeft = () => {
     toast('Not interested', { 
       icon: '❌',
