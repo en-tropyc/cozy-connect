@@ -139,16 +139,6 @@ export interface Profile {
   active?: boolean;           // Whether the profile should be shown
 }
 
-// Fisher-Yates shuffle algorithm
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
 export const getProfiles = async (): Promise<Profile[]> => {
   try {
     const response = await fetch('/api/profiles');
@@ -161,8 +151,7 @@ export const getProfiles = async (): Promise<Profile[]> => {
       throw new Error(data.error || 'Failed to fetch profiles');
     }
 
-    // Shuffle all profiles
-    return shuffleArray(data.profiles);
+    return data.profiles;
 
   } catch (error) {
     console.error('Error fetching profiles:', error);

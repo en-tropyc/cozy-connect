@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
 
 interface Match {
   id: string;
@@ -16,12 +17,15 @@ interface Match {
   shortIntro?: string;
   linkedinLink?: string;
   instagram?: string;
+  matchId?: string;
+  matchStatus?: string;
 }
 
 export default function MatchesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [pendingMatches, setPendingMatches] = useState<Match[]>([]);
+  const [acceptedMatches, setAcceptedMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +34,43 @@ export default function MatchesPage() {
       router.push('/auth/signin');
     }
   }, [status, router]);
+
+  const handleMatchAction = async (matchId: string, action: 'accepted' | 'rejected') => {
+    try {
+      const response = await fetch('/api/matches', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          matchId,
+          status: action
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to update connection request');
+      }
+
+      // Remove the match from pending matches
+      setPendingMatches(current => current.filter(match => match.matchId !== matchId));
+      
+      // If accepted, add to accepted matches
+      if (action === 'accepted') {
+        const acceptedMatch = pendingMatches.find(match => match.matchId === matchId);
+        if (acceptedMatch) {
+          setAcceptedMatches(current => [...current, acceptedMatch]);
+        }
+      }
+
+      toast.success(action === 'accepted' ? 'Connection accepted!' : 'Request declined');
+    } catch (error) {
+      console.error('Error updating connection:', error);
+      toast.error('Failed to update connection request. Please try again.');
+    }
+  };
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -41,7 +82,20 @@ export default function MatchesPage() {
           throw new Error(data.error || 'Failed to fetch matches');
         }
 
-        setMatches(data.matches);
+        // Separate matches into pending and accepted
+        const pending: Match[] = [];
+        const accepted: Match[] = [];
+        
+        data.matches.forEach((match: Match) => {
+          if (match.matchStatus === 'pending') {
+            pending.push(match);
+          } else if (match.matchStatus === 'accepted') {
+            accepted.push(match);
+          }
+        });
+
+        setPendingMatches(pending);
+        setAcceptedMatches(accepted);
       } catch (error) {
         console.error('Error fetching matches:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch matches');
@@ -81,21 +135,83 @@ export default function MatchesPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Matches</h1>
-        
-        {matches.length === 0 ? (
+        {pendingMatches.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Requested Connections</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pendingMatches.map((match) => (
+                <div
+                  key={match.id}
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  <div className="relative h-48">
+                    {match.picture?.[0]?.url ? (
+                      <Image
+                        src={match.picture[0].url}
+                        alt={match.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                        <span className="text-4xl text-gray-400">
+                          {match.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h2 className="text-xl font-semibold text-gray-900">{match.name}</h2>
+                        {match.companyTitle && (
+                          <p className="text-sm text-gray-600">{match.companyTitle}</p>
+                        )}
+                      </div>
+                      {match.location && (
+                        <span className="text-sm text-gray-500">{match.location}</span>
+                      )}
+                    </div>
+                    
+                    {match.shortIntro && (
+                      <p className="mt-2 text-sm text-gray-600 line-clamp-2">{match.shortIntro}</p>
+                    )}
+
+                    <div className="mt-4 flex gap-2">
+                      <button
+                        onClick={() => handleMatchAction(match.matchId!, 'accepted')}
+                        className="flex-1 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => handleMatchAction(match.matchId!, 'rejected')}
+                        className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Connected</h2>
+        {acceptedMatches.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-600">You haven't matched with anyone yet.</p>
+            <p className="text-gray-600">You haven't connected with anyone yet.</p>
             <Link
               href="/"
               className="mt-4 inline-block px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
             >
-              Start Swiping
+              Start Networking
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {matches.map((match) => (
+            {acceptedMatches.map((match) => (
               <div
                 key={match.id}
                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"

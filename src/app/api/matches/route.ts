@@ -6,7 +6,9 @@ import {
   getProfileById, 
   createMatch, 
   getUserMatches,
-  getProfilesByIds
+  getProfilesByIds,
+  base,
+  MATCHES_TABLE_ID
 } from '@/lib/airtable';
 
 export async function GET() {
@@ -32,11 +34,20 @@ export async function GET() {
     // Get all matches
     const matches = await getUserMatches(userProfile.id);
     
-    // Extract unique profile IDs
+    // Extract unique profile IDs and create a map of match details
+    const matchDetailsMap = new Map();
     const matchedProfileIds = [...new Set(matches.map(match => {
       const swiper = match.fields.Swiper as string;
       const swiped = match.fields.Swiped as string;
-      return swiper === userProfile.id ? swiped : swiper;
+      const otherUserId = swiper === userProfile.id ? swiped : swiper;
+      
+      // Store match details for each profile
+      matchDetailsMap.set(otherUserId, {
+        matchId: match.id,
+        matchStatus: match.fields.Status
+      });
+      
+      return otherUserId;
     }))];
 
     // Get all matched profiles efficiently using the new utility
@@ -54,6 +65,7 @@ export async function GET() {
         shortIntro: profile.fields['Short intro 簡短介紹自己'],
         linkedinLink: profile.fields['LinkedIn Link'],
         instagram: profile.fields['Instagram'],
+        ...matchDetailsMap.get(profile.id)
       }))
     });
   } catch (error) {
@@ -122,6 +134,72 @@ export async function POST(request: Request) {
       { 
         success: false, 
         error: error.message || 'Failed to create match',
+        details: error.error,
+        statusCode: error.statusCode || 500
+      },
+      { status: error.statusCode || 500 }
+    );
+  }
+}
+
+// Add this new function to update match status
+export async function PUT(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { success: false, error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    const { matchId, status } = await request.json();
+    if (!matchId || !status) {
+      return NextResponse.json(
+        { success: false, error: 'Missing matchId or status' },
+        { status: 400 }
+      );
+    }
+
+    if (!['accepted', 'rejected'].includes(status)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid status. Must be "accepted" or "rejected"' },
+        { status: 400 }
+      );
+    }
+
+    // Get user profile
+    const userProfile = await getUserProfile(session.user.email);
+    if (!userProfile) {
+      return NextResponse.json(
+        { success: false, error: 'User profile not found' },
+        { status: 404 }
+      );
+    }
+
+    // Update match status
+    if (!base) throw new Error('Airtable base not initialized');
+    
+    const match = await base(MATCHES_TABLE_ID).update([
+      {
+        id: matchId,
+        fields: {
+          Status: status
+        }
+      }
+    ]);
+
+    return NextResponse.json({ 
+      success: true,
+      match: match[0]
+    });
+
+  } catch (error: any) {
+    console.error('Error updating match:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error.message || 'Failed to update match',
         details: error.error,
         statusCode: error.statusCode || 500
       },

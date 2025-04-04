@@ -4,8 +4,14 @@ import { Profile } from '@/lib/airtable';
 
 // Profiles to exclude from results
 const BLACKLISTED_PROFILES = [
-  '☕️ Join Cozy Networking',
-  // 'Cozy Cowork Cafe'
+  '☕️ Join Cozy Networking'
+  // Add any other profiles you want to exclude here
+];
+
+// Profiles to prioritize at the top
+const PRIORITY_PROFILES = [
+  'Cozy Cowork Cafe',
+  'Chris Tam'  // Updated to match exact name
 ];
 
 export async function GET() {
@@ -40,6 +46,7 @@ export async function GET() {
     const records = await base(tableId)
       .select({
         filterByFormula: `NOT(OR(${blacklistFilter}))`,
+        sort: [{ field: 'Last Modified', direction: 'desc' }],
         fields: [
           'Name 名子',
           'Email 電子信箱',
@@ -59,7 +66,7 @@ export async function GET() {
       })
       .all();
 
-    const profiles: Profile[] = records.map((record) => ({
+    let profiles: Profile[] = records.map((record) => ({
       id: record.id,
       name: record.fields['Name 名子'] as string,
       email: record.fields['Email 電子信箱'] as string,
@@ -77,6 +84,43 @@ export async function GET() {
       location: record.fields['🌏 Where are you from? 你從哪裡來？'] as string,
       active: record.fields['Active'] as boolean
     }));
+
+    // Detailed logging of all profiles and their names
+    console.log('All profiles with exact names:');
+    profiles.forEach(profile => {
+      console.log(`Profile name: "${profile.name}" (${typeof profile.name})`);
+    });
+
+    console.log('\nLooking for these priority profiles:', PRIORITY_PROFILES);
+
+    // Separate priority profiles and other profiles
+    const priorityProfiles: Profile[] = [];
+    const otherProfiles: Profile[] = [];
+
+    profiles.forEach(profile => {
+      const isPriority = PRIORITY_PROFILES.includes(profile.name);
+      console.log(`Checking profile "${profile.name}" - Priority? ${isPriority}`);
+      
+      if (isPriority) {
+        console.log(`✅ Found priority profile: ${profile.name}`);
+        priorityProfiles.push(profile);
+      } else {
+        otherProfiles.push(profile);
+      }
+    });
+
+    console.log('\nPriority profiles found:', priorityProfiles.map(p => p.name));
+    console.log('Other profiles:', otherProfiles.map(p => p.name));
+
+    // Sort priority profiles to match the order in PRIORITY_PROFILES
+    priorityProfiles.sort((a, b) => {
+      return PRIORITY_PROFILES.indexOf(a.name) - PRIORITY_PROFILES.indexOf(b.name);
+    });
+
+    // Combine priority profiles with other profiles
+    profiles = [...priorityProfiles, ...otherProfiles];
+
+    console.log('\nFinal profile order:', profiles.map(p => p.name));
 
     return NextResponse.json({
       success: true,
