@@ -73,30 +73,68 @@ export default function Home() {
 
   const handleSwipeRight = async () => {
     try {
-      const response = await fetch('/api/matches', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          swipedProfileId: profiles[currentIndex].id,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to create match');
+      // First, check if there's an existing match
+      const matchesResponse = await fetch('/api/matches');
+      const matchesData = await matchesResponse.json();
+      
+      if (!matchesData.success) {
+        throw new Error('Failed to fetch matches');
       }
 
-      toast('Interested!', { 
-        icon: '❤️',
-        position: 'bottom-center',
-        className: 'bg-green-50 text-green-500 border border-green-100'
-      });
+      // Check if there's a match with the current profile
+      const existingMatch = matchesData.matches.find((match: any) => 
+        match.id === profiles[currentIndex].id
+      );
+
+      if (existingMatch) {
+        // Update the match status to accepted
+        const updateResponse = await fetch('/api/matches', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            matchId: existingMatch.matchId,
+            status: 'accepted'
+          }),
+        });
+
+        const updateData = await updateResponse.json();
+        if (!updateData.success) {
+          throw new Error('Failed to update match status');
+        }
+
+        toast('It\'s a match! 🎉', { 
+          icon: '❤️',
+          position: 'bottom-center',
+          className: 'bg-green-50 text-green-500 border border-green-100'
+        });
+      } else {
+        // Create a new match
+        const response = await fetch('/api/matches', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            swipedProfileId: profiles[currentIndex].id,
+          }),
+        });
+
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to create match');
+        }
+
+        toast('Interested!', { 
+          icon: '❤️',
+          position: 'bottom-center',
+          className: 'bg-green-50 text-green-500 border border-green-100'
+        });
+      }
     } catch (error) {
-      console.error('Error creating match:', error);
-      toast.error('Failed to create match. Please try again.');
+      console.error('Error handling swipe right:', error);
+      toast.error('Failed to process match. Please try again.');
     } finally {
       setCurrentIndex((prev) => prev + 1);
     }
