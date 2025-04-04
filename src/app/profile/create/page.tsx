@@ -8,43 +8,47 @@ import { toast } from 'react-hot-toast';
 interface ProfileFormData {
   name: string;
   shortIntro: string;
+  picture: File | null;
   companyTitle?: string;
-  location?: string;
+  fromLocation?: string;
+  githubUrl?: string;
   instagram?: string;
   linkedinLink?: string;
   categories?: string[];
-  lookingFor?: string;
-  canOffer?: string;
+  lookingFor: string;
+  canOffer: string;
   openToWork?: string;
   other?: string;
 }
 
 const CATEGORIES = [
   'Entrepreneur 創業家',
+  'Engineer 工程師',
   'Content Creator 內容創作者',
   'Designer 設計師',
-  'Marketing 行銷',
+  'Product Management 產品管理',
+  'Nomad 數位遊牧',
+  'Web3/Crypto 區塊鏈',
   'Social Media 社群媒體',
+  'Marketing 行銷',
+  'Student 學生',
+  'HR/Life Coach 職涯生涯教練',
   'Community Builder 社群經營者',
   'Wellness 健康',
-  'HR/Life Coach 職涯生涯教練',
-  'Developer 開發者',
-  'Product Manager 產品經理',
-  'Investor 投資人',
-  'Business Development 商務開發',
-  'Sales 銷售',
-  'Operations 營運',
+  'AI 人工智慧',
 ];
 
-export default function CreateProfile() {
+export default function CreateProfilePage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<ProfileFormData>({
     name: '',
     shortIntro: '',
+    picture: null,
     companyTitle: '',
-    location: '',
+    fromLocation: '',
+    githubUrl: '',
     instagram: '',
     linkedinLink: '',
     categories: [],
@@ -61,30 +65,71 @@ export default function CreateProfile() {
       return;
     }
 
+    if (!formData.picture) {
+      toast.error('Please upload a profile picture');
+      return;
+    }
+
     setLoading(true);
     try {
+      // First, upload the image to S3
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', formData.picture);
+
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadFormData
+      });
+
+      const uploadResult = await uploadResponse.json();
+      console.log('Upload response:', uploadResult);
+
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Failed to upload image');
+      }
+
+      // Create profile data with the S3 image URL
+      const profileData = {
+        name: formData.name,
+        shortIntro: formData.shortIntro,
+        companyTitle: formData.companyTitle,
+        fromLocation: formData.fromLocation,
+        githubUrl: formData.githubUrl,
+        instagram: formData.instagram,
+        linkedinLink: formData.linkedinLink,
+        categories: formData.categories,
+        lookingFor: formData.lookingFor,
+        canOffer: formData.canOffer,
+        openToWork: formData.openToWork,
+        other: formData.other,
+        email: session.user.email,
+        picture: [{
+          url: uploadResult.url,
+          filename: formData.picture.name
+        }]
+      };
+
+      // Create the profile with the image URL
       const response = await fetch('/api/profile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          email: session.user.email,
-        }),
+        body: JSON.stringify(profileData)
       });
 
-      const data = await response.json();
+      const result = await response.json();
+      console.log('Server response:', result);
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to create profile');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create profile');
       }
 
       toast.success('Profile created successfully!');
       router.push('/');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating profile:', error);
-      toast.error('Failed to create profile. Please try again.');
+      toast.error(error.message || 'Failed to create profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -127,6 +172,32 @@ export default function CreateProfile() {
               <h2 className="text-lg font-semibold text-gray-900">Basic Information</h2>
               
               <div>
+                <label htmlFor="picture" className="block text-sm font-medium text-gray-700">
+                  Profile Picture*
+                </label>
+                <input
+                  type="file"
+                  id="picture"
+                  name="picture"
+                  required
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    console.log('File selected:', file);
+                    if (file) {
+                      setFormData(prev => ({ ...prev, picture: file }));
+                    }
+                  }}
+                  className="mt-1 block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100"
+                />
+              </div>
+
+              <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                   Name*
                 </label>
@@ -137,7 +208,7 @@ export default function CreateProfile() {
                   required
                   value={formData.name}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                 />
               </div>
 
@@ -152,7 +223,7 @@ export default function CreateProfile() {
                   value={formData.shortIntro}
                   onChange={handleChange}
                   rows={3}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                 />
               </div>
 
@@ -166,33 +237,33 @@ export default function CreateProfile() {
                   name="companyTitle"
                   value={formData.companyTitle}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                 />
               </div>
 
               <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                  Location
+                <label htmlFor="fromLocation" className="block text-sm font-medium text-gray-700">
+                  Where are you from?
                 </label>
                 <input
                   type="text"
-                  id="location"
-                  name="location"
-                  value={formData.location}
+                  id="fromLocation"
+                  name="fromLocation"
+                  value={formData.fromLocation}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                 />
               </div>
             </div>
 
             {/* Categories */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900">Categories</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Categories/Skills</h2>
               <div className="grid grid-cols-2 gap-4">
                 {CATEGORIES.map(category => (
                   <label
                     key={category}
-                    className="flex items-center space-x-2 text-sm"
+                    className="flex items-center space-x-2 text-sm text-gray-900 hover:text-gray-700 cursor-pointer"
                   >
                     <input
                       type="checkbox"
@@ -200,7 +271,7 @@ export default function CreateProfile() {
                       onChange={() => handleCategoryChange(category)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span>{category}</span>
+                    <span className="select-none">{category}</span>
                   </label>
                 ))}
               </div>
@@ -210,6 +281,21 @@ export default function CreateProfile() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-gray-900">Social Links</h2>
               
+              <div>
+                <label htmlFor="githubUrl" className="block text-sm font-medium text-gray-700">
+                  GitHub Profile URL
+                </label>
+                <input
+                  type="url"
+                  id="githubUrl"
+                  name="githubUrl"
+                  value={formData.githubUrl}
+                  onChange={handleChange}
+                  placeholder="https://github.com/username"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
+                />
+              </div>
+
               <div>
                 <label htmlFor="instagram" className="block text-sm font-medium text-gray-700">
                   Instagram
@@ -221,7 +307,7 @@ export default function CreateProfile() {
                   value={formData.instagram}
                   onChange={handleChange}
                   placeholder="@username"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
                 />
               </div>
 
@@ -235,7 +321,7 @@ export default function CreateProfile() {
                   name="linkedinLink"
                   value={formData.linkedinLink}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                 />
               </div>
             </div>
@@ -246,29 +332,31 @@ export default function CreateProfile() {
               
               <div>
                 <label htmlFor="lookingFor" className="block text-sm font-medium text-gray-700">
-                  What are you looking for?
+                  What are you looking for?*
                 </label>
                 <textarea
                   id="lookingFor"
                   name="lookingFor"
+                  required
                   value={formData.lookingFor}
                   onChange={handleChange}
                   rows={3}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                 />
               </div>
 
               <div>
                 <label htmlFor="canOffer" className="block text-sm font-medium text-gray-700">
-                  What can you offer?
+                  What can you offer?*
                 </label>
                 <textarea
                   id="canOffer"
                   name="canOffer"
+                  required
                   value={formData.canOffer}
                   onChange={handleChange}
                   rows={3}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                 />
               </div>
 
@@ -283,7 +371,7 @@ export default function CreateProfile() {
                   value={formData.openToWork}
                   onChange={handleChange}
                   placeholder="E.g., Looking for freelance projects, Full-time positions, etc."
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
                 />
               </div>
 
@@ -297,7 +385,7 @@ export default function CreateProfile() {
                   value={formData.other}
                   onChange={handleChange}
                   rows={3}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                 />
               </div>
             </div>
