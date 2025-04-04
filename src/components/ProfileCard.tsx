@@ -2,6 +2,7 @@ import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { Profile } from '@/lib/airtable';
 import Image from 'next/image';
 import { HeartIcon, XMarkIcon } from '@heroicons/react/24/solid';
+import { useState } from 'react';
 
 interface ProfileCardProps {
   profile: Profile;
@@ -20,6 +21,7 @@ export default function ProfileCard({ profile, onSwipeLeft, onSwipeRight, isActi
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-30, 30]);
   const cardOpacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
+  const [imageError, setImageError] = useState(false);
   
   const backgroundOpacity = useTransform(x, [-200, -100, 0, 100, 200], [1, 0, 0, 0, 1]);
   const backgroundColor = useTransform(x, [-200, 0, 200], ['#ef4444', '#ffffff', '#22c55e']);
@@ -59,17 +61,26 @@ export default function ProfileCard({ profile, onSwipeLeft, onSwipeRight, isActi
       <div className="relative h-full w-full">
         {/* Profile image */}
         <div className="absolute inset-0">
-          {profile.picture?.[0]?.url ? (
+          {profile.picture?.[0]?.url && !imageError ? (
             <Image
               src={profile.picture[0].url}
               alt={profile.name}
               fill
               className="object-cover"
               priority
+              onError={() => setImageError(true)}
+              unoptimized // Bypass Next.js image optimization for external URLs
             />
           ) : (
-            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-              <span className="text-gray-400 text-lg">No Image</span>
+            <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+              <div className="text-center p-4">
+                <div className="w-24 h-24 rounded-full bg-gray-400 mx-auto mb-4 flex items-center justify-center">
+                  <span className="text-4xl text-white">
+                    {profile.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <span className="text-gray-600 text-lg">No Image Available</span>
+              </div>
             </div>
           )}
           {/* Gradient overlay */}
