@@ -7,6 +7,22 @@ const isServer = typeof window === 'undefined';
 let airtable: Airtable | null = null;
 let base: Airtable.Base | null = null;
 
+// Table IDs
+export const MATCHES_TABLE_ID = 'tblfmOco0ONZsxF1b';
+export const PROFILES_TABLE_ID = 'tbl9Jj8pIUABtsXRo';
+
+// Common profile fields to fetch
+const PROFILE_FIELDS = [
+  'Name 名子',
+  'Email 電子信箱',
+  'Picture 照片',
+  'Company/Title 公司職稱',
+  '🌏 Where are you from? 你從哪裡來？',
+  'Short intro 簡短介紹自己',
+  'LinkedIn Link',
+  'Instagram'
+];
+
 if (isServer) {
   if (!process.env.AIRTABLE_API_KEY) {
     throw new Error('AIRTABLE_API_KEY is required');
@@ -24,7 +40,79 @@ if (isServer) {
   base = airtable.base(process.env.AIRTABLE_BASE_ID);
 }
 
-// Export the base instance
+// Utility function to get user profile by email
+export async function getUserProfile(email: string) {
+  if (!base) throw new Error('Airtable base not initialized');
+
+  const profiles = await base(PROFILES_TABLE_ID)
+    .select({
+      filterByFormula: `{Email 電子信箱} = '${email}'`,
+      maxRecords: 1,
+      fields: PROFILE_FIELDS
+    })
+    .firstPage();
+    
+  return profiles[0];
+}
+
+// Utility function to get profile by ID
+export async function getProfileById(id: string) {
+  if (!base) throw new Error('Airtable base not initialized');
+
+  const profiles = await base(PROFILES_TABLE_ID)
+    .select({
+      filterByFormula: `RECORD_ID() = '${id}'`,
+      maxRecords: 1,
+      fields: PROFILE_FIELDS
+    })
+    .firstPage();
+    
+  return profiles[0];
+}
+
+// Utility function to create a match
+export async function createMatch(swiperId: string, swipedId: string) {
+  if (!base) throw new Error('Airtable base not initialized');
+  
+  const records = await base(MATCHES_TABLE_ID).create([
+    {
+      fields: {
+        Swiper: swiperId,
+        Swiped: swipedId,
+        Status: 'pending'
+      }
+    }
+  ]);
+  
+  return records[0];
+}
+
+// Utility function to get all matches for a user
+export async function getUserMatches(userId: string) {
+  if (!base) throw new Error('Airtable base not initialized');
+
+  return base(MATCHES_TABLE_ID)
+    .select({
+      filterByFormula: `OR({Swiper} = '${userId}', {Swiped} = '${userId}')`,
+      fields: ['Swiper', 'Swiped', 'Status']
+    })
+    .all();
+}
+
+// Utility function to get multiple profiles by IDs efficiently
+export async function getProfilesByIds(ids: string[]) {
+  if (!base) throw new Error('Airtable base not initialized');
+  if (ids.length === 0) return [];
+
+  return base(PROFILES_TABLE_ID)
+    .select({
+      filterByFormula: `OR(${ids.map(id => `RECORD_ID() = '${id}'`).join(',')})`,
+      fields: PROFILE_FIELDS
+    })
+    .all();
+}
+
+// Export the base instance and Profile interface
 export { base };
 
 export interface Profile {
