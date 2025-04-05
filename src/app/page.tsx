@@ -5,9 +5,54 @@ import { Profile, getProfiles } from '@/lib/airtable';
 import ProfileCard from '@/components/ProfileCard';
 import { Toaster, toast } from 'react-hot-toast';
 import { HeartIcon, XMarkIcon } from '@heroicons/react/24/solid';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { X, RotateCcw } from 'lucide-react';
+import { Heart } from 'lucide-react';
+
+// Custom match toast component
+const MatchToast = () => (
+  <motion.div
+    initial={{ scale: 0, opacity: 0 }}
+    animate={{ 
+      scale: [0, 1.2, 1],
+      opacity: 1,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut"
+      }
+    }}
+    className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-red-500 text-white px-6 py-3 rounded-full shadow-lg"
+  >
+    <motion.span
+      animate={{ 
+        scale: [1, 1.2, 1],
+        transition: {
+          repeat: Infinity,
+          repeatType: "reverse",
+          duration: 1
+        }
+      }}
+    >
+      ❤️
+    </motion.span>
+    <span className="font-bold text-lg">It's a match!</span>
+    <motion.span
+      animate={{ 
+        scale: [1, 1.2, 1],
+        transition: {
+          repeat: Infinity,
+          repeatType: "reverse",
+          duration: 1,
+          delay: 0.5
+        }
+      }}
+    >
+      🎉
+    </motion.span>
+  </motion.div>
+);
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -16,6 +61,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ message: string; details?: string } | null>(null);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [lastSwipedProfile, setLastSwipedProfile] = useState<{ profile: Profile; matchId: string | null } | null>(null);
+  const CHUNK_SIZE = 10;
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -24,7 +72,10 @@ export default function Home() {
       try {
         setLoading(true);
         const fetchedProfiles = await getProfiles();
-        setProfiles(fetchedProfiles);
+        
+        // Load first chunk of profiles
+        setProfiles(fetchedProfiles.slice(0, CHUNK_SIZE));
+        setHasMore(fetchedProfiles.length > CHUNK_SIZE);
         
         // Find the current user's profile
         if (session?.user?.email) {
@@ -47,6 +98,23 @@ export default function Home() {
     fetchData();
   }, [session, status]);
 
+  // Load more profiles when needed
+  useEffect(() => {
+    if (currentIndex >= profiles.length - 3 && hasMore) {
+      const loadMoreProfiles = async () => {
+        try {
+          const fetchedProfiles = await getProfiles();
+          const nextChunk = fetchedProfiles.slice(profiles.length, profiles.length + CHUNK_SIZE);
+          setProfiles(prev => [...prev, ...nextChunk]);
+          setHasMore(fetchedProfiles.length > profiles.length + CHUNK_SIZE);
+        } catch (err) {
+          console.error('Error loading more profiles:', err);
+        }
+      };
+      loadMoreProfiles();
+    }
+  }, [currentIndex, profiles.length, hasMore]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (currentIndex >= profiles.length) return;
@@ -63,6 +131,7 @@ export default function Home() {
   }, [currentIndex, profiles.length]);
 
   const handleSwipeLeft = () => {
+    setLastSwipedProfile(null);
     toast('Not interested', { 
       icon: '❌',
       position: 'bottom-center',
@@ -73,70 +142,51 @@ export default function Home() {
 
   const handleSwipeRight = async () => {
     try {
-      // First, check if there's an existing match
-      const matchesResponse = await fetch('/api/matches');
-      const matchesData = await matchesResponse.json();
+      const currentProfile = profiles[currentIndex];
       
-      if (!matchesData.success) {
-        throw new Error('Failed to fetch matches');
+      // Create or update match in a single API call
+      const response = await fetch('/api/matches', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          swipedProfileId: currentProfile.id,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to process match');
       }
 
-      // Check if there's a match with the current profile
-      const existingMatch = matchesData.matches.find((match: any) => 
-        match.id === profiles[currentIndex].id
-      );
+      // Store the last swiped profile and match ID
+      setLastSwipedProfile({
+        profile: currentProfile,
+        matchId: data.matchId
+      });
 
-      if (existingMatch) {
-        // Update the match status to accepted
-        const updateResponse = await fetch('/api/matches', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            matchId: existingMatch.matchId,
-            status: 'accepted'
-          }),
-        });
-
-        const updateData = await updateResponse.json();
-        if (!updateData.success) {
-          throw new Error('Failed to update match status');
-        }
-
-        // Show match animation
-        const currentProfile = profiles[currentIndex];
+      // If it's a match, show the animation
+      if (data.isMatch) {
         setProfiles(prev => prev.map(profile => 
           profile.id === currentProfile.id ? { ...profile, isMatch: true } : profile
         ));
 
+        toast.custom((t) => <MatchToast />, {
+          duration: 3000,
+          position: 'bottom-center',
+          style: {
+            background: 'transparent',
+            boxShadow: 'none',
+          }
+        });
+
         // Wait for the animation to complete before moving to the next card
         setTimeout(() => {
           setCurrentIndex((prev) => prev + 1);
-        }, 3000); // Match animation duration
-
-        toast('It\'s a match! 🎉', { 
-          icon: '❤️',
-          position: 'bottom-center',
-          className: 'bg-green-50 text-green-500 border border-green-100'
-        });
+        }, 3000);
       } else {
-        // Create a new match
-        const response = await fetch('/api/matches', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            swipedProfileId: profiles[currentIndex].id,
-          }),
-        });
-
-        const data = await response.json();
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to create match');
-        }
-
         toast('Interested!', { 
           icon: '❤️',
           position: 'bottom-center',
@@ -148,6 +198,38 @@ export default function Home() {
       console.error('Error handling swipe right:', error);
       toast.error('Failed to process match. Please try again.');
       setCurrentIndex((prev) => prev + 1);
+    }
+  };
+
+  const handleUndo = async () => {
+    if (!lastSwipedProfile) return;
+
+    try {
+      // Delete the match if it exists
+      if (lastSwipedProfile.matchId) {
+        const response = await fetch('/api/matches', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            matchId: lastSwipedProfile.matchId
+          }),
+        });
+
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to undo match');
+        }
+      }
+
+      // Move back to the previous profile
+      setCurrentIndex((prev) => Math.max(0, prev - 1));
+      setLastSwipedProfile(null);
+      toast.success('Undo successful!');
+    } catch (error) {
+      console.error('Error undoing match:', error);
+      toast.error('Failed to undo. Please try again.');
     }
   };
 
@@ -262,18 +344,31 @@ export default function Home() {
             .reverse()}
         </AnimatePresence>
       </div>
-      <div className="flex gap-6 mt-6 mb-4">
+      <div className="flex justify-center gap-4 mt-4">
         <button
           onClick={handleSwipeLeft}
-          className="p-4 rounded-full bg-white shadow-lg hover:bg-gray-50 active:scale-95 transition-all"
+          className="p-4 rounded-full bg-white shadow-lg hover:bg-gray-100 transition-colors"
+          disabled={loading}
         >
-          <XMarkIcon className="h-8 w-8 text-red-500" />
+          <X className="w-8 h-8 text-red-500" />
+        </button>
+        <button
+          onClick={handleUndo}
+          className={`p-4 rounded-full shadow-lg transition-colors ${
+            lastSwipedProfile 
+              ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+          }`}
+          disabled={loading || !lastSwipedProfile}
+        >
+          <RotateCcw className="w-8 h-8" />
         </button>
         <button
           onClick={handleSwipeRight}
-          className="p-4 rounded-full bg-white shadow-lg hover:bg-gray-50 active:scale-95 transition-all"
+          className="p-4 rounded-full bg-white shadow-lg hover:bg-gray-100 transition-colors"
+          disabled={loading}
         >
-          <HeartIcon className="h-8 w-8 text-green-500" />
+          <Heart className="w-8 h-8 text-green-500" />
         </button>
       </div>
     </main>
