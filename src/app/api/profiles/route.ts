@@ -2,16 +2,20 @@ import { NextResponse } from 'next/server';
 import Airtable from 'airtable';
 import { Profile } from '@/lib/airtable';
 
-export async function GET() {
-  // Log environment variables (excluding sensitive values)
-  console.log('API Route - Environment check:', {
-    hasApiKey: !!process.env.AIRTABLE_API_KEY,
-    apiKeyLength: process.env.AIRTABLE_API_KEY?.length,
-    baseId: process.env.AIRTABLE_BASE_ID,
-  });
+// Profiles to exclude from results
+const BLACKLISTED_PROFILES = [
+  '☕️ Join Cozy Networking'
+  // Add any other profiles you want to exclude here
+];
 
+// Profiles to prioritize at the top
+const PRIORITY_PROFILES = [
+  'Cozy Cowork Cafe',
+  'Chris Tam'  // Updated to match exact name
+];
+
+export async function GET() {
   if (!process.env.AIRTABLE_API_KEY) {
-    console.error('Missing AIRTABLE_API_KEY');
     return NextResponse.json(
       { success: false, error: 'Missing Airtable API key configuration' },
       { status: 500 }
@@ -19,7 +23,6 @@ export async function GET() {
   }
 
   if (!process.env.AIRTABLE_BASE_ID) {
-    console.error('Missing AIRTABLE_BASE_ID');
     return NextResponse.json(
       { success: false, error: 'Missing Airtable base ID configuration' },
       { status: 500 }
@@ -27,102 +30,117 @@ export async function GET() {
   }
 
   try {
-    console.log('Creating Airtable instance...');
     const airtable = new Airtable({ 
       apiKey: process.env.AIRTABLE_API_KEY,
       endpointUrl: 'https://api.airtable.com',
     });
 
-    console.log('Creating base instance...');
     const base = airtable.base(process.env.AIRTABLE_BASE_ID);
-    
-    console.log('Attempting to fetch profiles from Airtable...');
     const tableId = 'tbl9Jj8pIUABtsXRo';
     
-    try {
-      // First, let's try to get all records without specifying fields
-      // This will help us see the actual field names in the response
-      console.log('Fetching a sample record to see field names...');
-      const sampleRecords = await base(tableId)
-        .select({
-          maxRecords: 1
-        })
-        .firstPage();
+    // Create OR conditions for each blacklisted profile
+    const blacklistFilter = BLACKLISTED_PROFILES
+      .map(name => `{Name 名子} = '${name}'`)
+      .join(', ');
+    
+    const records = await base(tableId)
+      .select({
+        filterByFormula: `NOT(OR(${blacklistFilter}))`,
+        sort: [{ field: 'Last Modified', direction: 'desc' }],
+        fields: [
+          'Name 名子',
+          'Email 電子信箱',
+          'Cozy Connect Gmail',
+          'Instagram',
+          'Short intro 簡短介紹自己',
+          'LinkedIn Link',
+          'Company/Title 公司職稱',
+          'Picture 照片',
+          'Categories/Skills 分類',
+          'I am looking for 我在尋找什麼？',
+          'I can offer 我可以提供什麼？',
+          'I am open for work 我在找工作機會',
+          'Other',
+          'Last Modified',
+          '🌏 Where are you from? 你從哪裡來？'
+        ]
+      })
+      .all();
 
-      if (sampleRecords.length > 0) {
-        console.log('Available fields in the first record:', Object.keys(sampleRecords[0].fields));
-        console.log('Sample record data:', sampleRecords[0].fields);
+    let profiles: Profile[] = records.map((record) => ({
+      id: record.id,
+      name: record.fields['Name 名子'] as string,
+      email: record.fields['Email 電子信箱'] as string,
+      cozyConnectGmail: record.fields['Cozy Connect Gmail'] as string,
+      instagram: record.fields['Instagram'] as string,
+      shortIntro: record.fields['Short intro 簡短介紹自己'] as string,
+      linkedinLink: record.fields['LinkedIn Link'] as string,
+      companyTitle: record.fields['Company/Title 公司職稱'] as string,
+      picture: record.fields['Picture 照片'] as any[],
+      categories: record.fields['Categories/Skills 分類'] as string[],
+      lookingFor: record.fields['I am looking for 我在尋找什麼？'] as string,
+      canOffer: record.fields['I can offer 我可以提供什麼？'] as string,
+      openToWork: record.fields['I am open for work 我在找工作機會'] as string,
+      other: record.fields['Other'] as string,
+      lastModified: record.fields['Last Modified'] as string,
+      location: record.fields['🌏 Where are you from? 你從哪裡來？'] as string,
+      active: record.fields['Active'] as boolean
+    }));
+
+    // Detailed logging of all profiles and their names
+    console.log('All profiles with exact names:');
+    profiles.forEach(profile => {
+      console.log(`Profile name: "${profile.name}" (${typeof profile.name})`);
+    });
+
+    console.log('\nLooking for these priority profiles:', PRIORITY_PROFILES);
+
+    // Separate priority profiles and other profiles
+    const priorityProfiles: Profile[] = [];
+    const otherProfiles: Profile[] = [];
+
+    profiles.forEach(profile => {
+      const isPriority = PRIORITY_PROFILES.includes(profile.name);
+      console.log(`Checking profile "${profile.name}" - Priority? ${isPriority}`);
+      
+      if (isPriority) {
+        console.log(`✅ Found priority profile: ${profile.name}`);
+        priorityProfiles.push(profile);
+      } else {
+        otherProfiles.push(profile);
       }
+    });
 
-      // Now fetch all records with the fields we want
-      console.log('Fetching all records...');
-      const records = await base(tableId)
-        .select()
-        .all();
+    console.log('\nPriority profiles found:', priorityProfiles.map(p => p.name));
+    console.log('Other profiles:', otherProfiles.map(p => p.name));
 
-      console.log(`Successfully fetched ${records.length} records`);
+    // Sort priority profiles to match the order in PRIORITY_PROFILES
+    priorityProfiles.sort((a, b) => {
+      return PRIORITY_PROFILES.indexOf(a.name) - PRIORITY_PROFILES.indexOf(b.name);
+    });
 
-      const profiles: Profile[] = records.map((record) => ({
-        id: record.id,
-        name: record.fields['Name 名子'] as string,
-        email: record.fields['Email 電子信箱'] as string,
-        instagram: record.fields['Instagram'] as string,
-        shortIntro: record.fields['Short intro 簡短介紹自己'] as string,
-        linkedinLink: record.fields['LinkedIn Link'] as string,
-        companyTitle: record.fields['Company/Title 公司職稱'] as string,
-        picture: record.fields['Picture 照片'] as any[],
-        categories: record.fields['Categories/Skills 分類'] as string[],
-        lookingFor: record.fields['I am looking for 我在尋找什麼？'] as string,
-        canOffer: record.fields['I can offer 我可以提供什麼？'] as string,
-        openToWork: record.fields['I am open for work 我在找工作機會'] as string,
-        other: record.fields['Other'] as string,
-        lastModified: record.fields['Last Modified'] as string,
-        location: record.fields['🌏 Where are you from? 你從哪裡來？'] as string,
-      }));
+    // Combine priority profiles with other profiles
+    profiles = [...priorityProfiles, ...otherProfiles];
 
-      return NextResponse.json({
-        success: true,
-        sampleFields: sampleRecords[0]?.fields || null,
-        profiles,
-      });
+    console.log('\nFinal profile order:', profiles.map(p => p.name));
+
+    return NextResponse.json({
+      success: true,
+      profiles
+    });
       
-    } catch (error: any) {
-      console.error('Detailed validation error:', {
-        error,
-        message: error.message,
-        statusCode: error.statusCode,
-        type: error.error,
-      });
-      
-      if (error.statusCode === 403) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Authentication failed. Please verify your API key has access to this base.',
-            details: error.message,
-          },
-          { status: 403 }
-        );
-      }
-      
-      throw error;
-    }
   } catch (error: any) {
-    console.error('Detailed Airtable API Error:', {
-      error,
+    console.error('Error fetching profiles:', {
       message: error.message,
-      statusCode: error.statusCode,
-      type: error.error,
-      stack: error.stack,
+      status: error.statusCode,
+      type: error.error
     });
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Unknown error occurred',
-        details: error.stack,
-        statusCode: error.statusCode,
-        type: error.error,
+        error: error.message || 'Failed to fetch profiles',
+        statusCode: error.statusCode || 500
       },
       { status: error.statusCode || 500 }
     );
