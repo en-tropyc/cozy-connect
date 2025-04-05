@@ -110,6 +110,14 @@ export default function LinkProfilePage() {
       <div className="max-w-md mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Link Your Profile</h1>
+          <div className="mb-6">
+            <p className="text-xl font-bold text-gray-900 mb-2">Find Your Profile</p>
+            <ol className="list-decimal list-inside space-y-2 text-gray-600">
+              <li>Open the Airtable link: <a href="https://airtable.com/appXPGzvT71UhNsjl/shrPuJX5UkpkmO4io/tbl9Jj8pIUABtsXRo" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">View Profiles Table</a></li>
+              <li>Look for your name in the &quot;Name 名子&quot; column</li>
+              <li>Enter your exact name as shown in the table below</li>
+            </ol>
+          </div>
           
           {error && (
             <div className={`mb-6 p-4 rounded-md ${
