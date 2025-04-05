@@ -59,6 +59,7 @@ export async function GET() {
         id: profile.id,
         name: profile.fields['Name 名子'],
         email: profile.fields['Email 電子信箱'],
+        cozyConnectGmail: profile.fields['Cozy Connect Gmail'],
         picture: profile.fields['Picture 照片'],
         companyTitle: profile.fields['Company/Title 公司職稱'],
         location: profile.fields['🌏 Where are you from? 你從哪裡來？'],

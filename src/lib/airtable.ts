@@ -119,6 +119,7 @@ export interface Profile {
   id: string;
   name: string;                 // Name 名子
   email?: string;              // Email 電子信箱
+  cozyConnectGmail?: string;   // Cozy Connect Gmail
   instagram?: string;          // Instagram
   shortIntro: string;          // Short intro 簡短介紹自己
   linkedinLink?: string;       // LinkedIn Link
@@ -137,6 +138,7 @@ export interface Profile {
   lastModified?: string;      // Last Modified
   location?: string;          // 🌏 Where are you from? 你從哪裡來？
   active?: boolean;           // Whether the profile should be shown
+  isMatch?: boolean;          // Whether this profile is a match
 }
 
 export const getProfiles = async (): Promise<Profile[]> => {

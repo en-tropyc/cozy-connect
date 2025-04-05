@@ -1,5 +1,6 @@
-import type { NextAuthOptions } from "next-auth";
+import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import https from 'https';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -8,12 +9,24 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       httpOptions: {
         timeout: 10000,
+        agent: new https.Agent({
+          keepAlive: true,
+          timeout: 10000,
+          scheduling: 'lifo'
+        })
       },
-    }),
+      authorization: {
+        params: {
+          access_type: "offline",
+          response_type: "code",
+          prompt: "select_account"
+        }
+      }
+    })
   ],
   callbacks: {
-    session: async ({ session, token }) => {
-      if (session?.user) {
+    async session({ session, token }) {
+      if (session.user) {
         session.user.id = token.sub!;
       }
       return session;
@@ -23,4 +36,5 @@ export const authOptions: NextAuthOptions = {
     signIn: '/auth/signin',
     error: '/auth/error',
   },
+  debug: true
 }; 

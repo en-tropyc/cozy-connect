@@ -50,6 +50,7 @@ export async function GET() {
         fields: [
           'Name 名子',
           'Email 電子信箱',
+          'Cozy Connect Gmail',
           'Instagram',
           'Short intro 簡短介紹自己',
           'LinkedIn Link',
@@ -70,6 +71,7 @@ export async function GET() {
       id: record.id,
       name: record.fields['Name 名子'] as string,
       email: record.fields['Email 電子信箱'] as string,
+      cozyConnectGmail: record.fields['Cozy Connect Gmail'] as string,
       instagram: record.fields['Instagram'] as string,
       shortIntro: record.fields['Short intro 簡短介紹自己'] as string,
       linkedinLink: record.fields['LinkedIn Link'] as string,
