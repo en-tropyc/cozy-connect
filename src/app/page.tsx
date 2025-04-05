@@ -29,7 +29,7 @@ export default function Home() {
         // Find the current user's profile
         if (session?.user?.email) {
           const userProfile = fetchedProfiles.find(
-            profile => profile.email === session.user.email
+            profile => profile.cozyConnectGmail === session.user.email
           );
           setUserProfile(userProfile || null);
         }
@@ -104,6 +104,17 @@ export default function Home() {
           throw new Error('Failed to update match status');
         }
 
+        // Show match animation
+        const currentProfile = profiles[currentIndex];
+        setProfiles(prev => prev.map(profile => 
+          profile.id === currentProfile.id ? { ...profile, isMatch: true } : profile
+        ));
+
+        // Wait for the animation to complete before moving to the next card
+        setTimeout(() => {
+          setCurrentIndex((prev) => prev + 1);
+        }, 3000); // Match animation duration
+
         toast('It\'s a match! 🎉', { 
           icon: '❤️',
           position: 'bottom-center',
@@ -131,11 +142,11 @@ export default function Home() {
           position: 'bottom-center',
           className: 'bg-green-50 text-green-500 border border-green-100'
         });
+        setCurrentIndex((prev) => prev + 1);
       }
     } catch (error) {
       console.error('Error handling swipe right:', error);
       toast.error('Failed to process match. Please try again.');
-    } finally {
       setCurrentIndex((prev) => prev + 1);
     }
   };
@@ -239,6 +250,7 @@ export default function Home() {
                 onSwipeLeft={handleSwipeLeft}
                 onSwipeRight={handleSwipeRight}
                 isActive={index === 0}
+                isMatch={profile.isMatch}
                 style={{
                   zIndex: profiles.length - index,
                   scale: 1 - index * 0.05,
