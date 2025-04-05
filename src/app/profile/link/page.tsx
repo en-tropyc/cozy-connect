@@ -112,8 +112,8 @@ export default function LinkProfilePage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Link Your Profile</h1>
           <div className="mb-6">
             <p className="text-xl font-bold text-gray-900 mb-2">Find Your Profile</p>
-            <ol className="list-decimal list-inside space-y-2 text-gray-600">
-              <li>Open the Airtable link: <a href="https://airtable.com/appXPGzvT71UhNsjl/shrPuJX5UkpkmO4io/tbl9Jj8pIUABtsXRo" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">View Profiles Table</a></li>
+            <ol className="list-decimal list-inside space-y-2 text-gray-700">
+              <li>Open the <a href="https://airtable.com/appXPGzvT71UhNsjl/shrPuJX5UkpkmO4io/tbl9Jj8pIUABtsXRo" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Airtable link</a></li>
               <li>Look for your name in the &quot;Name 名子&quot; column</li>
               <li>Enter your exact name as shown in the table below</li>
             </ol>
@@ -135,7 +135,7 @@ export default function LinkProfilePage() {
                 <p className="mt-2 text-sm">Please make sure you entered your name exactly as it appears in your profile.</p>
               )}
               {error.type === 'ALREADY_LINKED' && (
-                <p className="mt-2 text-sm">Try signing in with the email address associated with your profile.</p>
+                <p className="mt-2 text-sm">Try signing in with the email address associated with your name in the <a href="https://airtable.com/appXPGzvT71UhNsjl/shrPuJX5UkpkmO4io/tbl9Jj8pIUABtsXRo" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Cozy Airtable</a>.</p>
               )}
             </div>
           )}
@@ -158,9 +158,9 @@ export default function LinkProfilePage() {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-600"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-700 text-gray-900"
                 required
-                placeholder="Enter your name as it appears in your profile"
+                placeholder=" Enter your name as it appears in Airtable"
                 disabled={codeSent}
               />
             </div>
@@ -175,7 +175,7 @@ export default function LinkProfilePage() {
                   id="verificationCode"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-600"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-600 text-gray-900"
                   required
                   placeholder="Enter the code from your email"
                 />

@@ -151,7 +151,23 @@ export default function CreateProfilePage() {
       }
 
       toast.success('Profile created successfully!');
-      router.push('/');
+      
+      // Add a delay to ensure the profile is propagated
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Check if profile exists before redirecting
+      console.log('Checking profile existence...');
+      const checkResponse = await fetch('/api/profile/check');
+      const checkResult = await checkResponse.json();
+      console.log('Profile check response:', checkResult);
+      
+      if (!checkResult.success) {
+        console.error('Profile check failed:', checkResult.error);
+        throw new Error(`Profile creation succeeded but profile check failed: ${checkResult.error}. Please try refreshing the page.`);
+      }
+      
+      // Redirect to matches page
+      router.push('/matches');
     } catch (error: any) {
       console.error('Error creating profile:', error);
       toast.error(error.message || 'Failed to create profile. Please try again.');

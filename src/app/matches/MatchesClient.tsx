@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import ProfileModal from '@/components/ProfileModal';
+import MatchActionButtons from '@/components/MatchActionButtons';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import type { Profile } from '@/lib/airtable';
@@ -110,20 +111,10 @@ export default function MatchesClient({ pendingMatches, acceptedMatches }: Match
                       </p>
                     )}
 
-                    <div className="mt-4 flex gap-2">
-                      <button
-                        onClick={() => handleMatchAction(match.matchId!, 'accepted')}
-                        className="flex-1 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors"
-                      >
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => handleMatchAction(match.matchId!, 'rejected')}
-                        className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
-                      >
-                        Reject
-                      </button>
-                    </div>
+                    <MatchActionButtons
+                      matchId={match.matchId!}
+                      onAction={handleMatchAction}
+                    />
                   </div>
                 </div>
               ))}

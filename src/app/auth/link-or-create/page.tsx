@@ -44,7 +44,8 @@ export default function LinkOrCreatePage() {
             <div>
               <h3 className="text-lg font-medium text-gray-900">Do you have an existing profile?</h3>
               <p className="mt-1 text-sm text-gray-600">
-                Choose whether you want to link your existing profile or create a new one.
+                If you've already created a profile in the <a href="https://airtable.com/appXPGzvT71UhNsjl/shrPuJX5UkpkmO4io/tbl9Jj8pIUABtsXRo" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Cozy Airtable</a>, you can link it here. 
+                Otherwise, you create a new profile.
               </p>
             </div>
 
@@ -62,13 +63,6 @@ export default function LinkOrCreatePage() {
               >
                 Create New Profile
               </Link>
-            </div>
-
-            <div className="mt-4 text-sm text-gray-600">
-              <p>
-                If you already have a profile but haven't linked it yet, choose "Link Existing Profile" 
-                and enter your verification code.
-              </p>
             </div>
           </div>
         </div>

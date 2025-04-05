@@ -12,6 +12,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 const FIELD_NAMES = {
   NAME: 'Name 名子',
   EMAIL: 'Email 電子信箱',
+  COZY_CONNECT_GMAIL: 'Cozy Connect Gmail',
   SHORT_INTRO: 'Short intro 簡短介紹自己',
   COMPANY_TITLE: 'Company/Title 公司職稱',
   LOCATION: 'Where are you located?',
@@ -67,7 +68,8 @@ export async function POST(request: Request) {
       
       const fields = {
         [FIELD_NAMES.NAME]: data.name,
-        [FIELD_NAMES.EMAIL]: data.email,
+        [FIELD_NAMES.EMAIL]: userEmail,
+        [FIELD_NAMES.COZY_CONNECT_GMAIL]: userEmail,
         [FIELD_NAMES.SHORT_INTRO]: data.shortIntro,
         [FIELD_NAMES.COMPANY_TITLE]: data.companyTitle,
         [FIELD_NAMES.LOCATION]: data.location,
