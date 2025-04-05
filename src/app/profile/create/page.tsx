@@ -213,7 +213,7 @@ export default function CreateProfilePage() {
                       setFormData(prev => ({ ...prev, picture: file }));
                     }
                   }}
-                  className="mt-1 block w-full text-sm text-gray-500
+                  className="mt-1 block w-full text-sm text-gray-600
                     file:mr-4 file:py-2 file:px-4
                     file:rounded-md file:border-0
                     file:text-sm file:font-semibold
@@ -320,7 +320,7 @@ export default function CreateProfilePage() {
                   value={formData.githubUrl}
                   onChange={handleChange}
                   placeholder="https://github.com/username"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder-gray-600"
                 />
               </div>
 
@@ -335,7 +335,7 @@ export default function CreateProfilePage() {
                   value={formData.instagram}
                   onChange={handleChange}
                   placeholder="@username"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder-gray-600"
                 />
               </div>
 
@@ -349,7 +349,7 @@ export default function CreateProfilePage() {
                   name="linkedinLink"
                   value={formData.linkedinLink}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder-gray-600"
                 />
               </div>
             </div>
@@ -399,7 +399,7 @@ export default function CreateProfilePage() {
                   value={formData.openToWork}
                   onChange={handleChange}
                   placeholder="E.g., Looking for freelance projects, Full-time positions, etc."
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder-gray-600"
                 />
               </div>
 
@@ -419,7 +419,7 @@ export default function CreateProfilePage() {
             </div>
 
             <div className="pt-4">
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-gray-600 mb-4">
                 Fields marked with <span className="text-red-500">*</span> are required
               </p>
               <button

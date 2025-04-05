@@ -154,7 +154,7 @@ export default function MatchesPage() {
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                        <span className="text-4xl text-gray-400">
+                        <span className="text-4xl text-gray-600">
                           {match.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
@@ -169,7 +169,7 @@ export default function MatchesPage() {
                         )}
                       </div>
                       {match.location && (
-                        <span className="text-sm text-gray-500">{match.location}</span>
+                        <span className="text-sm text-gray-600">{match.location}</span>
                       )}
                     </div>
                     
@@ -226,7 +226,7 @@ export default function MatchesPage() {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                      <span className="text-4xl text-gray-400">
+                      <span className="text-4xl text-gray-600">
                         {match.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
@@ -241,7 +241,7 @@ export default function MatchesPage() {
                       )}
                     </div>
                     {match.location && (
-                      <span className="text-sm text-gray-500">{match.location}</span>
+                      <span className="text-sm text-gray-600">{match.location}</span>
                     )}
                   </div>
                   
