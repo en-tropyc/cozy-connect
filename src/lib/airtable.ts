@@ -7,6 +7,13 @@ const isServer = typeof window === 'undefined';
 let airtable: Airtable | null = null;
 let base: Airtable.Base | null = null;
 
+if (isServer) {
+  airtable = new Airtable({
+    apiKey: process.env.AIRTABLE_API_KEY
+  });
+  base = airtable.base(process.env.AIRTABLE_BASE_ID!);
+}
+
 // Table IDs
 export const MATCHES_TABLE_ID = 'tblfmOco0ONZsxF1b';
 export const PROFILES_TABLE_ID = 'tbl9Jj8pIUABtsXRo';
@@ -23,30 +30,13 @@ const PROFILE_FIELDS = [
   'Instagram'
 ];
 
-if (isServer) {
-  if (!process.env.AIRTABLE_API_KEY) {
-    throw new Error('AIRTABLE_API_KEY is required');
-  }
-  
-  airtable = new Airtable({ 
-    apiKey: process.env.AIRTABLE_API_KEY,
-    endpointUrl: 'https://api.airtable.com',
-  });
-
-  if (!process.env.AIRTABLE_BASE_ID) {
-    throw new Error('AIRTABLE_BASE_ID is required');
-  }
-
-  base = airtable.base(process.env.AIRTABLE_BASE_ID);
-}
-
 // Utility function to get user profile by email
 export async function getUserProfile(email: string) {
   if (!base) throw new Error('Airtable base not initialized');
 
   const profiles = await base(PROFILES_TABLE_ID)
     .select({
-      filterByFormula: `{Email 電子信箱} = '${email}'`,
+      filterByFormula: `{Cozy Connect Gmail} = '${email}'`,
       maxRecords: 1,
       fields: PROFILE_FIELDS
     })
