@@ -81,12 +81,21 @@ export async function createMatch(swiperId: string, swipedId: string) {
 export async function getUserMatches(userId: string) {
   if (!base) throw new Error('Airtable base not initialized');
 
-  return base(MATCHES_TABLE_ID)
+  const matches = await base(MATCHES_TABLE_ID)
     .select({
       filterByFormula: `OR({Swiper} = '${userId}', {Swiped} = '${userId}')`,
       fields: ['Swiper', 'Swiped', 'Status']
     })
     .all();
+
+  // Separate matches where user is the swiper vs. the swiped person
+  const matchesWhereUserIsSwiper = matches.filter(match => match.fields.Swiper === userId);
+  const matchesWhereUserIsSwiped = matches.filter(match => match.fields.Swiped === userId);
+
+  return {
+    matchesWhereUserIsSwiper,
+    matchesWhereUserIsSwiped
+  };
 }
 
 // Utility function to get multiple profiles by IDs efficiently
