@@ -33,9 +33,12 @@ export async function GET() {
 
     // Get all matches
     const matches = await getUserMatches(userProfile.id);
+    console.log('Raw matches data:', JSON.stringify(matches, null, 2));
     
     // Extract unique profile IDs and create a map of match details
     const matchDetailsMap = new Map();
+    console.log('MatchDetailsMap before processing:', JSON.stringify(Array.from(matchDetailsMap.entries()), null, 2));
+    
     const matchedProfileIds = [...new Set(matches.map(match => {
       const swiper = match.fields.Swiper as string;
       const swiped = match.fields.Swiped as string;
@@ -50,24 +53,35 @@ export async function GET() {
       return otherUserId;
     }))];
 
+    console.log('MatchDetailsMap:', JSON.stringify(Array.from(matchDetailsMap.entries()), null, 2));
+
     // Get all matched profiles efficiently using the new utility
-    const matchedProfiles = await getProfilesByIds(matchedProfileIds);
+    // Get profiles for matched users
+    const profiles = await getProfilesByIds(matchedProfileIds);
+    console.log('Raw profiles from Airtable:', JSON.stringify(profiles, null, 2));
+
+    const processedMatches = profiles.map(profile => ({
+      id: profile.id,
+      name: profile.fields['Name 名子'],
+      email: profile.fields['Email 電子信箱'],
+      cozyConnectGmail: profile.fields['Cozy Connect Gmail'],
+      picture: profile.fields['Picture 照片'],
+      companyTitle: profile.fields['Company/Title 公司職稱'],
+      location: profile.fields['🌏 Where are you from? 你從哪裡來？'],
+      shortIntro: profile.fields['Short intro 簡短介紹自己'],
+      linkedinLink: profile.fields['LinkedIn Link'],
+      instagram: profile.fields['Instagram'],
+      categories: profile.fields['Categories/Skills 分類'],
+      lookingFor: profile.fields['I am looking for 我在尋找什麼？'],
+      canOffer: profile.fields['I can offer 我可以提供什麼？'],
+      ...matchDetailsMap.get(profile.id)
+    }));
+
+    console.log('Final processed matches:', JSON.stringify(processedMatches, null, 2));
 
     return NextResponse.json({
       success: true,
-      matches: matchedProfiles.map(profile => ({
-        id: profile.id,
-        name: profile.fields['Name 名子'],
-        email: profile.fields['Email 電子信箱'],
-        cozyConnectGmail: profile.fields['Cozy Connect Gmail'],
-        picture: profile.fields['Picture 照片'],
-        companyTitle: profile.fields['Company/Title 公司職稱'],
-        location: profile.fields['🌏 Where are you from? 你從哪裡來？'],
-        shortIntro: profile.fields['Short intro 簡短介紹自己'],
-        linkedinLink: profile.fields['LinkedIn Link'],
-        instagram: profile.fields['Instagram'],
-        ...matchDetailsMap.get(profile.id)
-      }))
+      matches: processedMatches
     });
   } catch (error) {
     console.error('Error fetching matches:', error);

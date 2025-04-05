@@ -32,26 +32,36 @@ export default async function MatchesPage() {
     }
 
     const { matchesWhereUserIsSwiper, matchesWhereUserIsSwiped } = await getUserMatches(userProfile.id);
+    console.log('Raw matches:', { matchesWhereUserIsSwiper, matchesWhereUserIsSwiped });
 
     // Get profiles for all matches
     const allMatchIds = [
       ...matchesWhereUserIsSwiper.map(m => (m as MatchRecord).fields.Swiped),
       ...matchesWhereUserIsSwiped.map(m => (m as MatchRecord).fields.Swiper)
     ];
+    console.log('All match IDs:', allMatchIds);
+
     const profileRecords = await getProfilesByIds(allMatchIds);
+    console.log('Raw profile records:', JSON.stringify(profileRecords, null, 2));
 
     // Convert Airtable records to Profile objects
-    const profiles = profileRecords.map(record => ({
-      id: record.id,
-      name: record.fields['Name 名子'] as string,
-      email: record.fields['Email 電子信箱'] as string,
-      cozyConnectGmail: record.fields['Cozy Connect Gmail'] as string,
-      instagram: record.fields['Instagram'] as string,
-      shortIntro: record.fields['Short intro 簡短介紹自己'] as string,
-      linkedinLink: record.fields['LinkedIn Link'] as string,
-      companyTitle: record.fields['Company/Title 公司職稱'] as string,
-      picture: record.fields['Picture 照片'] as any[],
-      location: record.fields['🌏 Where are you from? 你從哪裡來？'] as string
+    const profiles = profileRecords.map(record => {
+      console.log('Processing record:', record.id, record.fields);
+      return {
+        id: record.id,
+        name: record.fields['Name 名子'] as string,
+        email: record.fields['Email 電子信箱'] as string,
+        cozyConnectGmail: record.fields['Cozy Connect Gmail'] as string,
+        instagram: record.fields['Instagram'] as string,
+        shortIntro: record.fields['Short intro 簡短介紹自己'] as string,
+        linkedinLink: record.fields['LinkedIn Link'] as string,
+        categories: record.fields['Categories/Skills 分類'] as string[],
+        lookingFor: record.fields['I am looking for 我在尋找什麼？'] as string,
+        canOffer: record.fields['I can offer 我可以提供什麼？'] as string,
+        companyTitle: record.fields['Company/Title 公司職稱'] as string,
+        picture: record.fields['Picture 照片'] as any[],
+        location: record.fields['🌏 Where are you from? 你從哪裡來？'] as string
+      };
     }));
 
     // Process matches where user is swiped (these are connection requests)

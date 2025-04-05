@@ -27,7 +27,10 @@ const PROFILE_FIELDS = [
   '🌏 Where are you from? 你從哪裡來？',
   'Short intro 簡短介紹自己',
   'LinkedIn Link',
-  'Instagram'
+  'Instagram',
+  'Categories/Skills 分類',
+  'I am looking for 我在尋找什麼？',
+  'I can offer 我可以提供什麼？'
 ];
 
 // Utility function to get user profile by email

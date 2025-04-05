@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import ProfileModal from '@/components/ProfileModal';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import type { Profile } from '@/lib/airtable';
 
-interface Match extends Profile {
+export interface Match extends Profile {
   matchId: string;
 }
 
@@ -18,6 +19,8 @@ interface MatchesClientProps {
 export default function MatchesClient({ pendingMatches, acceptedMatches }: MatchesClientProps) {
   const [pending, setPending] = useState<Match[]>(pendingMatches);
   const [accepted, setAccepted] = useState<Match[]>(acceptedMatches);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleMatchAction = async (matchId: string, action: 'accepted' | 'rejected') => {
     try {
@@ -66,7 +69,11 @@ export default function MatchesClient({ pendingMatches, acceptedMatches }: Match
               {pending.map((match) => (
                 <div
                   key={match.id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => {
+                    setSelectedMatch(match);
+                    setIsModalOpen(true);
+                  }}
                 >
                   <div className="relative h-48">
                     {match.picture?.[0]?.url ? (
@@ -98,7 +105,9 @@ export default function MatchesClient({ pendingMatches, acceptedMatches }: Match
                     </div>
                     
                     {match.shortIntro && (
-                      <p className="mt-2 text-sm text-gray-600 line-clamp-2">{match.shortIntro}</p>
+                      <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                        {match.shortIntro}
+                      </p>
                     )}
 
                     <div className="mt-4 flex gap-2">
@@ -138,7 +147,11 @@ export default function MatchesClient({ pendingMatches, acceptedMatches }: Match
             {accepted.map((match) => (
               <div
                 key={match.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => {
+                  setSelectedMatch(match);
+                  setIsModalOpen(true);
+                }}
               >
                 <div className="relative h-48">
                   {match.picture?.[0]?.url ? (
@@ -146,7 +159,7 @@ export default function MatchesClient({ pendingMatches, acceptedMatches }: Match
                       src={match.picture[0].url}
                       alt={match.name}
                       fill
-                      className="object-cover"
+                      className="object-cover object-center"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
@@ -170,7 +183,36 @@ export default function MatchesClient({ pendingMatches, acceptedMatches }: Match
                   </div>
                   
                   {match.shortIntro && (
-                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">{match.shortIntro}</p>
+                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                      {match.shortIntro}
+                    </p>
+                  )}
+
+                  {match.categories && match.categories.length > 0 && (
+                    <div className="mt-3">
+                      <h3 className="text-sm font-medium text-gray-900">Categories/Skills</h3>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {match.categories.map((category, index) => (
+                          <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            {category}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {match.lookingFor && (
+                    <div className="mt-3">
+                      <h3 className="text-sm font-medium text-gray-900">Looking For</h3>
+                      <p className="mt-1 text-sm text-gray-600">{match.lookingFor}</p>
+                    </div>
+                  )}
+
+                  {match.canOffer && (
+                    <div className="mt-3">
+                      <h3 className="text-sm font-medium text-gray-900">Can Offer</h3>
+                      <p className="mt-1 text-sm text-gray-600">{match.canOffer}</p>
+                    </div>
                   )}
 
                   <div className="mt-4 flex gap-3">
@@ -215,6 +257,12 @@ export default function MatchesClient({ pendingMatches, acceptedMatches }: Match
           </div>
         )}
       </div>
+
+      <ProfileModal
+        match={selectedMatch}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
-} 
+}
