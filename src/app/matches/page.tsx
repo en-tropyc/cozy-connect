@@ -62,7 +62,7 @@ export default async function MatchesPage() {
         picture: record.fields['Picture 照片'] as any[],
         location: record.fields['🌏 Where are you from? 你從哪裡來？'] as string
       };
-    }));
+    });
 
     // Process matches where user is swiped (these are connection requests)
     const pendingConnectionRequests = matchesWhereUserIsSwiped

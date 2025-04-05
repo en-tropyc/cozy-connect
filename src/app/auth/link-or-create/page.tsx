@@ -44,7 +44,7 @@ export default function LinkOrCreatePage() {
             <div>
               <h3 className="text-lg font-medium text-gray-900">Do you have an existing profile?</h3>
               <p className="mt-1 text-sm text-gray-600">
-                Choose whether you want to link an existing profile or create a new one.
+                Choose whether you want to link your existing profile or create a new one.
               </p>
             </div>
 
