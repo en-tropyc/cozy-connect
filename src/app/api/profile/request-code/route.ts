@@ -89,9 +89,8 @@ export async function POST(request: Request) {
     try {
       console.log('Attempting to send email to:', session.user.email);
       
-      // During development/testing, we can only send to the API key owner's email
-      const isDevelopment = process.env.NODE_ENV === 'development';
-      const toEmail = isDevelopment ? 'cozycowork2024@gmail.com' : session.user.email;
+      // Always send to Cozy email for now since it's a paid feature
+      const toEmail = 'cozycowork2024@gmail.com';
       
       const emailResponse = await resend.emails.send({
         from: 'onboarding@resend.dev',
@@ -106,12 +105,10 @@ export async function POST(request: Request) {
             <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
               <span style="font-size: 24px; font-weight: bold; letter-spacing: 4px;">${verificationCode}</span>
             </div>
-            ${isDevelopment ? `
-              <div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <p style="color: #856404; margin: 0;"><strong>Development Mode Notice:</strong></p>
-                <p style="color: #856404; margin: 10px 0 0 0;">During development, all verification codes are sent to cozycowork2024@gmail.com. Please check this email and forward the code to ${session.user.email}.</p>
-              </div>
-            ` : ''}
+            <div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="color: #856404; margin: 0;"><strong>Notice:</strong></p>
+              <p style="color: #856404; margin: 10px 0 0 0;">All verification codes are sent to cozycowork2024@gmail.com. Please check this email and forward the code to ${session.user.email}.</p>
+            </div>
             <p>This code will expire in 15 minutes.</p>
             <p>Best regards,<br>The Cozy Connect Team</p>
           </div>
@@ -119,13 +116,9 @@ export async function POST(request: Request) {
       });
       console.log('Email response:', emailResponse);
 
-      // Return different messages based on environment
       return NextResponse.json({ 
         success: true,
-        isDevelopment,
-        message: isDevelopment 
-          ? 'Verification code sent to admin email (cozycowork2024@gmail.com). Please check this email and forward the code.'
-          : 'Verification code sent to your email.'
+        message: 'Verification code sent to admin email (cozycowork2024@gmail.com). Please check this email and forward the code.'
       });
     } catch (error: any) {
       console.error('Error sending email:', {
