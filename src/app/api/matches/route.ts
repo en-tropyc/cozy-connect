@@ -148,9 +148,21 @@ export async function POST(request: Request) {
       const match = existingMatches[0];
       matchId = match.id;
       
-      // If there's an existing match where they swiped right on us, it's a match!
-      if (match.fields.Swiper === swipedProfile.id && match.fields.Status === 'pending') {
-        console.log('Found pending match from other user, updating to accepted');
+      // Check if this user has already swiped right
+      if (match.fields.Swiper === userProfile.id) {
+        console.log('User has already swiped right on this profile');
+        return NextResponse.json({ 
+          success: true,
+          isMatch: false,
+          matchId,
+          alreadySwiped: true
+        });
+      }
+      
+      // Check if other user has swiped right on us
+      if (match.fields.Swiper === swipedProfile.id) {
+        // We're now swiping right on someone who swiped right on us
+        console.log('Updating existing match to accepted');
         await base(MATCHES_TABLE_ID).update([
           {
             id: match.id,
@@ -159,20 +171,21 @@ export async function POST(request: Request) {
             }
           }
         ]);
-        isMatch = true;
-      } else if (match.fields.Swiper === userProfile.id) {
-        console.log('User has already swiped right on this profile');
-        // User has already swiped right on this profile
-        isMatch = match.fields.Status === 'accepted';
+        isMatch = true; // It's a match because both users swiped right
       }
     } else {
-      // Create new match
-      console.log('Creating new match');
+      // Create a new pending match (no match yet, waiting for other person to swipe right)
+      console.log('Creating new pending match');
       const match = await createMatch(userProfile.id, swipedProfile.id);
       matchId = match.id;
+      isMatch = false;
     }
 
-    console.log('Match result:', { isMatch, matchId });
+    console.log('Match result:', { 
+      isMatch, 
+      matchId, 
+      existingMatchCount: existingMatches.length 
+    });
 
     return NextResponse.json({ 
       success: true,
