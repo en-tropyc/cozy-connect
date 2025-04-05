@@ -150,7 +150,7 @@ export default function LinkProfilePage() {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-600"
                 required
                 placeholder="Enter your name as it appears in your profile"
                 disabled={codeSent}
@@ -167,11 +167,11 @@ export default function LinkProfilePage() {
                   id="verificationCode"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-600"
                   required
                   placeholder="Enter the code from your email"
                 />
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-gray-600">
                   A verification code has been sent to the email address associated with your profile.
                 </p>
               </div>

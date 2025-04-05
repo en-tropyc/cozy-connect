@@ -43,7 +43,7 @@ export default function LinkOrCreatePage() {
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-medium text-gray-900">Do you have an existing profile?</h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-600">
                 Choose whether you want to link an existing profile or create a new one.
               </p>
             </div>
@@ -64,7 +64,7 @@ export default function LinkOrCreatePage() {
               </Link>
             </div>
 
-            <div className="mt-4 text-sm text-gray-500">
+            <div className="mt-4 text-sm text-gray-600">
               <p>
                 If you already have a profile but haven't linked it yet, choose "Link Existing Profile" 
                 and enter your verification code.
