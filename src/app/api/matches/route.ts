@@ -96,45 +96,115 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log('Processing match for:', {
+      userEmail: session.user.email,
+      swipedProfileId
+    });
+
     // Get both profiles in parallel
     const [userProfile, swipedProfile] = await Promise.all([
       getUserProfile(session.user.email),
       getProfileById(swipedProfileId)
     ]);
 
-    if (!userProfile) {
+    if (!userProfile || !swipedProfile) {
+      console.log('Profile not found:', {
+        userProfileFound: !!userProfile,
+        swipedProfileFound: !!swipedProfile
+      });
       return NextResponse.json(
-        { success: false, error: 'User profile not found' },
+        { success: false, error: 'Profile not found' },
         { status: 404 }
       );
     }
 
-    if (!swipedProfile) {
-      return NextResponse.json(
-        { success: false, error: 'Swiped profile not found' },
-        { status: 404 }
-      );
+    console.log('Found profiles:', {
+      userId: userProfile.id,
+      swipedUserId: swipedProfile.id
+    });
+
+    // Check for existing match in parallel with getting profiles
+    if (!base) {
+      throw new Error('Airtable base not initialized');
     }
 
-    // Create match
-    const match = await createMatch(userProfile.id, swipedProfileId);
+    // First, check if the other user has already swiped right on us
+    const existingMatches = await base(MATCHES_TABLE_ID)
+      .select({
+        filterByFormula: `OR(
+          AND({Swiper} = '${swipedProfile.id}', {Swiped} = '${userProfile.id}'),
+          AND({Swiper} = '${userProfile.id}', {Swiped} = '${swipedProfile.id}')
+        )`,
+        fields: ['Swiper', 'Swiped', 'Status']
+      })
+      .all();
+
+    console.log('Existing matches found:', existingMatches.length);
+
+    let isMatch = false;
+    let matchId = null;
+
+    if (existingMatches.length > 0) {
+      const match = existingMatches[0];
+      matchId = match.id;
+      
+      // Check if this user has already swiped right
+      if (match.fields.Swiper === userProfile.id) {
+        console.log('User has already swiped right on this profile');
+        return NextResponse.json({ 
+          success: true,
+          isMatch: false,
+          matchId,
+          alreadySwiped: true
+        });
+      }
+      
+      // Check if other user has swiped right on us
+      if (match.fields.Swiper === swipedProfile.id) {
+        // We're now swiping right on someone who swiped right on us
+        console.log('Updating existing match to accepted');
+        await base(MATCHES_TABLE_ID).update([
+          {
+            id: match.id,
+            fields: {
+              Status: 'accepted'
+            }
+          }
+        ]);
+        isMatch = true; // It's a match because both users swiped right
+      }
+    } else {
+      // Create a new pending match (no match yet, waiting for other person to swipe right)
+      console.log('Creating new pending match');
+      const match = await createMatch(userProfile.id, swipedProfile.id);
+      matchId = match.id;
+      isMatch = false;
+    }
+
+    console.log('Match result:', { 
+      isMatch, 
+      matchId, 
+      existingMatchCount: existingMatches.length 
+    });
 
     return NextResponse.json({ 
       success: true,
-      matchId: match.id
+      isMatch,
+      matchId
     });
 
   } catch (error: any) {
-    console.error('Error creating match:', {
+    console.error('Error processing match:', {
       message: error.message,
       status: error.statusCode,
-      type: error.error
+      type: error.error,
+      stack: error.stack
     });
     
     return NextResponse.json(
       { 
         success: false, 
-        error: error.message || 'Failed to create match',
+        error: error.message || 'Failed to process match',
         details: error.error,
         statusCode: error.statusCode || 500
       },
@@ -201,6 +271,85 @@ export async function PUT(request: Request) {
       { 
         success: false, 
         error: error.message || 'Failed to update match',
+        details: error.error,
+        statusCode: error.statusCode || 500
+      },
+      { status: error.statusCode || 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { success: false, error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    const { matchId } = await request.json();
+    if (!matchId) {
+      return NextResponse.json(
+        { success: false, error: 'Missing matchId' },
+        { status: 400 }
+      );
+    }
+
+    // Get user profile to verify ownership
+    const userProfile = await getUserProfile(session.user.email);
+    if (!userProfile) {
+      return NextResponse.json(
+        { success: false, error: 'User profile not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get the match to verify ownership
+    if (!base) {
+      throw new Error('Airtable base not initialized');
+    }
+
+    const match = await base(MATCHES_TABLE_ID)
+      .select({
+        filterByFormula: `AND(
+          RECORD_ID() = '${matchId}',
+          OR(
+            {Swiper} = '${userProfile.id}',
+            {Swiped} = '${userProfile.id}'
+          )
+        )`,
+        fields: ['Swiper', 'Swiped']
+      })
+      .firstPage();
+
+    if (!match || match.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Match not found or unauthorized' },
+        { status: 404 }
+      );
+    }
+
+    // Delete the match
+    await base(MATCHES_TABLE_ID).destroy([matchId]);
+
+    return NextResponse.json({ 
+      success: true
+    });
+
+  } catch (error: any) {
+    console.error('Error deleting match:', {
+      message: error.message,
+      status: error.statusCode,
+      type: error.error,
+      stack: error.stack
+    });
+    
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error.message || 'Failed to delete match',
         details: error.error,
         statusCode: error.statusCode || 500
       },
