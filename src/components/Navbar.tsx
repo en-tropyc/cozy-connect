@@ -17,7 +17,13 @@ export function Navbar() {
               </Link>
             </div>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
+            <Link
+              href="/feedback"
+              className="text-indigo-600 hover:text-indigo-900 px-3 py-2 rounded-md text-sm font-medium"
+            >
+              Feedback
+            </Link>
             {session ? (
               <div className="flex items-center space-x-4">
                 <Link
