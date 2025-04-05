@@ -11,7 +11,13 @@ const BLACKLISTED_PROFILES = [
 // Profiles to prioritize at the top
 const PRIORITY_PROFILES = [
   'Cozy Cowork Cafe',
-  'Chris Tam'  // Updated to match exact name
+  'Stella',
+  'Jacky Wang',
+  'Mike Chuang',
+  'cin',
+  'Dana',
+  'Melissa (Mel)',
+  'Chris Tam',
 ];
 
 export async function GET() {
@@ -101,7 +107,7 @@ export async function GET() {
 
     profiles.forEach(profile => {
       const isPriority = PRIORITY_PROFILES.includes(profile.name);
-      console.log(`Checking profile "${profile.name}" - Priority? ${isPriority}`);
+      console.log(`Checking ${profile.name}: Priority? ${isPriority}`);
       
       if (isPriority) {
         console.log(`✅ Found priority profile: ${profile.name}`);
@@ -145,4 +151,4 @@ export async function GET() {
       { status: error.statusCode || 500 }
     );
   }
-} 
+}
