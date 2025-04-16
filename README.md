@@ -4,24 +4,31 @@ Cozy Connect is a modern web application built with Next.js that helps connect p
 
 ## Features
 
-- User authentication with Google OAuth
-- Profile management with AWS S3 for image storage
-- Data management using Airtable as a backend
-- Email notifications via Resend
-- Modern, responsive UI
+Core Features:
+- User profiles and connections
+- Modern, responsive UI built with Next.js
+- TypeScript for type safety
+- Tailwind CSS for styling
+
+Optional Integrations:
+- Authentication (default: Google OAuth, but customizable)
+- Storage (default: AWS S3 for profile pictures, but customizable)
+- Database (default: Airtable for profiles, but customizable)
+- Email notifications (default: Resend, but customizable)
 
 ## Prerequisites
 
-Before you begin, ensure you have the following:
+Required:
 - Node.js 18.x or later
 - npm or yarn package manager
-- Access to the following services:
-  - Google Cloud Console (for OAuth)
-  - AWS S3
-  - Airtable
-  - Resend
 
-## Installation
+Optional (based on your needs):
+- Authentication provider (Google OAuth or any OAuth provider)
+- Storage solution for media files
+- Database for user data
+- Email service provider
+
+## Quick Start
 
 1. Clone the repository:
 ```bash
@@ -41,38 +48,32 @@ yarn install
 cp .env.example .env.local
 ```
 
-4. Configure your environment variables in `.env.local` with your service credentials.
+4. Configure your environment variables in `.env.local`. The minimum required variables are:
+```
+# Required
+NEXTAUTH_SECRET=your_generated_secret_here
+NEXTAUTH_URL=http://localhost:3000
 
-## Configuration
+# Optional - Authentication (if using Google OAuth)
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 
-You'll need to set up the following services:
+# Optional - Storage (if using AWS S3)
+AWS_REGION=your_aws_region_here
+AWS_ACCESS_KEY_ID=your_aws_access_key_id_here
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key_here
+AWS_BUCKET_NAME=your_bucket_name_here
 
-### Airtable
-1. Create an Airtable base
-2. Create a table named "Profiles"
-3. Generate an API key
-4. Add credentials to `.env.local`
+# Optional - Database (if using Airtable)
+AIRTABLE_API_KEY=your_airtable_api_key_here
+AIRTABLE_BASE_ID=your_airtable_base_id_here
+AIRTABLE_TABLE_NAME=your_table_name_here
 
-### Google OAuth
-1. Create a project in Google Cloud Console
-2. Configure OAuth consent screen
-3. Create OAuth 2.0 credentials
-4. Add credentials to `.env.local`
+# Optional - Email (if using Resend)
+RESEND_API_KEY=your_resend_api_key_here
+```
 
-### AWS S3
-1. Create an S3 bucket
-2. Create IAM credentials
-3. Add credentials to `.env.local`
-
-### Resend
-1. Sign up for Resend
-2. Generate an API key
-3. Add the key to `.env.local`
-
-## Development
-
-Run the development server:
-
+5. Run the development server:
 ```bash
 npm run dev
 # or
@@ -80,6 +81,47 @@ yarn dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to view the application.
+
+## Customizing External Services
+
+### Authentication
+The default implementation uses Google OAuth, but you can:
+1. Use a different OAuth provider supported by NextAuth
+2. Implement your own authentication logic
+3. Remove authentication entirely
+
+To modify authentication:
+1. Update `src/app/api/auth/[...nextauth]/route.ts`
+2. Modify the auth provider configuration in your `.env.local`
+
+### Storage
+The default implementation uses AWS S3 for storing profile pictures, but you can:
+1. Use a different cloud storage provider
+2. Use local file system storage
+3. Remove media storage entirely
+
+To modify storage:
+1. Update the storage utility functions in `src/utils/storage.ts`
+2. Update your environment variables accordingly
+
+### Database
+The default implementation uses Airtable, but you can:
+1. Use any database of your choice
+2. Use local storage
+3. Implement your own data layer
+
+To modify the database:
+1. Update the database utility functions in `src/utils/db.ts`
+2. Update your environment variables accordingly
+
+### Email Notifications
+The default implementation uses Resend, but you can:
+1. Use a different email service provider
+2. Remove email notifications entirely
+
+To modify email notifications:
+1. Update the email utility functions in `src/utils/email.ts`
+2. Update your environment variables accordingly
 
 ## Contributing
 
@@ -103,5 +145,5 @@ If you have any questions or need help, please:
 ## Acknowledgments
 
 - Built with [Next.js](https://nextjs.org/)
-- Styled with Tailwind CSS
-- Powered by Vercel
+- Styled with [Tailwind CSS](https://tailwindcss.com/)
+- Powered by [Vercel](https://vercel.com/)
