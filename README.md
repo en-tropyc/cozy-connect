@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cozy Connect
 
-## Getting Started
+Cozy Connect is a modern web application built with Next.js that helps connect people in meaningful ways. 
 
-First, run the development server:
+## Features
+
+- User authentication with Google OAuth
+- Profile management with AWS S3 for image storage
+- Data management using Airtable as a backend
+- Email notifications via Resend
+- Modern, responsive UI
+
+## Prerequisites
+
+Before you begin, ensure you have the following:
+- Node.js 18.x or later
+- npm or yarn package manager
+- Access to the following services:
+  - Google Cloud Console (for OAuth)
+  - AWS S3
+  - Airtable
+  - Resend
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/cozy_connect.git
+cd cozy_connect
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Copy the environment variables file:
+```bash
+cp .env.example .env.local
+```
+
+4. Configure your environment variables in `.env.local` with your service credentials.
+
+## Configuration
+
+You'll need to set up the following services:
+
+### Airtable
+1. Create an Airtable base
+2. Create a table named "Profiles"
+3. Generate an API key
+4. Add credentials to `.env.local`
+
+### Google OAuth
+1. Create a project in Google Cloud Console
+2. Configure OAuth consent screen
+3. Create OAuth 2.0 credentials
+4. Add credentials to `.env.local`
+
+### AWS S3
+1. Create an S3 bucket
+2. Create IAM credentials
+3. Add credentials to `.env.local`
+
+### Resend
+1. Sign up for Resend
+2. Generate an API key
+3. Add the key to `.env.local`
+
+## Development
+
+Run the development server:
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Contributing
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-## Learn More
+## Security
 
-To learn more about Next.js, take a look at the following resources:
+For security issues, please see our [Security Policy](SECURITY.md).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Deploy on Vercel
+## Support
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+If you have any questions or need help, please:
+1. Check the documentation
+2. Open an issue
+3. Start a discussion
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Acknowledgments
+
+- Built with [Next.js](https://nextjs.org/)
+- Styled with Tailwind CSS
+- Powered by Vercel
