@@ -33,7 +33,6 @@ Integrations:
   - [Getting Started with Frontend Development](#getting-started-with-frontend-development)
   - [Design Principles](#design-principles)
 - [Contributing](#contributing)
-- [Security](#security)
 - [License](#license)
 - [Support](#support)
 - [Acknowledgments](#acknowledgments)
@@ -271,10 +270,6 @@ Next.js pages and layouts that compose our features:
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-## Security
-
-For security issues, please see our [Security Policy](SECURITY.md).
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -285,9 +280,3 @@ If you have any questions or need help, please:
 1. Check the documentation
 2. Open an issue
 3. Start a discussion
-
-## Acknowledgments
-
-- Built with [Next.js](https://nextjs.org/)
-- Styled with [Tailwind CSS](https://tailwindcss.com/)
-- Powered by [Vercel](https://vercel.com/)
