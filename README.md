@@ -215,7 +215,7 @@ AIRTABLE_API_KEY=your_airtable_api_key_here        # Your Airtable API key for a
 AIRTABLE_BASE_ID=appXPGzvT71UhNsjl                 # Our community's base ID (pre-configured)
 AIRTABLE_TABLE_NAME=Profiles                       # Main profiles table name (pre-configured)
 
-# Optional -  Google OAuth and NextAuth (neede only for working on authentication features)
+# Optional - Google OAuth and NextAuth (needed only for working on authentication features)
 NEXTAUTH_SECRET=your_generated_secret_here         # Generate with: openssl rand -base64 32
 NEXTAUTH_URL=http://localhost:3000                 # Your local development URL
 GOOGLE_CLIENT_ID=your_google_client_id_here        # From Google Cloud Console
@@ -230,6 +230,41 @@ AWS_BUCKET_NAME=your_bucket_name                   # Your S3 bucket for profile 
 # Optional - Email Service (needed only for notification features)
 RESEND_API_KEY=your_resend_api_key_here           # For sending email notifications
 ```
+
+### Environment Variables Explained
+
+#### Airtable Configuration (Required for all development)
+- `AIRTABLE_API_KEY`: Your personal API key for accessing our community database. You'll need to request access from the maintainers.
+- `AIRTABLE_BASE_ID`: Pre-configured to point to our community's database. Don't change this unless you're setting up a separate instance.
+- `AIRTABLE_TABLE_NAME`: The name of our profiles table. This should remain as "Profiles" to maintain compatibility.
+
+#### Authentication Configuration (Optional - only if working on auth features)
+If you're not working on authentication-related features, you can skip these settings:
+- `NEXTAUTH_SECRET`: A random string used to encrypt session data
+- `NEXTAUTH_URL`: The base URL of your application
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: OAuth credentials from Google Cloud Console
+
+To set up Google OAuth (only if working on auth features):
+1. Go to the [Google Cloud Console](https://console.cloud.google.com)
+2. Create a new project or select an existing one
+3. Enable the Google OAuth2 API
+4. Create OAuth 2.0 credentials (type: Web application)
+5. Add authorized redirect URIs:
+   - http://localhost:3000/api/auth/callback/google (development)
+   - https://your-domain.com/api/auth/callback/google (production)
+
+#### AWS S3 Configuration (Optional)
+Only needed if you're working on profile picture features:
+1. Create an S3 bucket in your AWS account
+2. Configure CORS settings for your bucket
+3. Create an IAM user with S3 access
+4. Add the credentials to your environment variables
+
+#### Email Service (Optional)
+Only needed if you're working on notification features:
+1. Create an account on [Resend](https://resend.com)
+2. Generate an API key
+3. Add it to your environment variables
 
 5. Run the development server:
 ```bash
@@ -305,38 +340,3 @@ If you have any questions or need help, please:
 - Built with [Next.js](https://nextjs.org/)
 - Styled with [Tailwind CSS](https://tailwindcss.com/)
 - Powered by [Vercel](https://vercel.com/)
-
-### Environment Variables Explained
-
-#### Airtable Configuration (Required for all development)
-- `AIRTABLE_API_KEY`: Your personal API key for accessing our community database. You'll need to request access from the maintainers.
-- `AIRTABLE_BASE_ID`: Pre-configured to point to our community's database. Don't change this unless you're setting up a separate instance.
-- `AIRTABLE_TABLE_NAME`: The name of our profiles table. This should remain as "Profiles" to maintain compatibility.
-
-#### Authentication Configuration (Optional - only if working on auth features)
-If you're not working on authentication-related features, you can skip these settings:
-- `NEXTAUTH_SECRET`: A random string used to encrypt session data
-- `NEXTAUTH_URL`: The base URL of your application
-- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: OAuth credentials from Google Cloud Console
-
-To set up Google OAuth (only if working on auth features):
-1. Go to the [Google Cloud Console](https://console.cloud.google.com)
-2. Create a new project or select an existing one
-3. Enable the Google OAuth2 API
-4. Create OAuth 2.0 credentials (type: Web application)
-5. Add authorized redirect URIs:
-   - http://localhost:3000/api/auth/callback/google (development)
-   - https://your-domain.com/api/auth/callback/google (production)
-
-#### AWS S3 Configuration (Optional)
-Only needed if you're working on profile picture features:
-1. Create an S3 bucket in your AWS account
-2. Configure CORS settings for your bucket
-3. Create an IAM user with S3 access
-4. Add the credentials to your environment variables
-
-#### Email Service (Optional)
-Only needed if you're working on notification features:
-1. Create an account on [Resend](https://resend.com)
-2. Generate an API key
-3. Add it to your environment variables
