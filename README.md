@@ -1,5 +1,8 @@
 # Cozy Connect
 
+![cozy_bg](https://github.com/user-attachments/assets/fc9c25c3-c3e0-4036-a2ed-c37319504419)
+
+
 Cozy Connect is a modern web application built with Next.js that helps connect people in meaningful ways. 
 
 🌐 **Live Demo**: [https://cozy-connect.vercel.app](https://cozy-connect.vercel.app)
