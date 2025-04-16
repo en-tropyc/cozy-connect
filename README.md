@@ -9,15 +9,13 @@ Cozy Connect is a modern web application built with Next.js that helps connect p
 Core Features:
 - User profiles and connections within our community
 - Access to our network of entrepreneurs, creators, and professionals
-- Modern, responsive UI built with Next.js
-- TypeScript for type safety
-- Tailwind CSS for styling
+- Modern, responsive UI built with Next.js, TypeScript and Tailwind CSS
 
 Integrations:
-- Airtable as our community database (required)
+- Airtable as our community database
 - Google OAuth for authentication
 - AWS S3 for profile picture storage
-- Email notifications via Resend
+- Email notifications via Resend (free tier, only sends to CozyCowork2024@gmail.com)
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
