@@ -2,6 +2,8 @@
 
 Cozy Connect is a modern web application built with Next.js that helps connect people in meaningful ways. 
 
+🌐 **Live Demo**: [https://cozy-connect.vercel.app](https://cozy-connect.vercel.app)
+
 ## Features
 
 Core Features:
