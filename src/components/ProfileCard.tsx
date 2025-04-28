@@ -48,6 +48,7 @@ export default function ProfileCard({
         zIndex: style.zIndex ?? 0,
         scale: style.scale ?? 1,
         translateY: style.translateY ?? 0,
+        willChange: 'transform, opacity',
       }}
       drag={isActive ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
@@ -66,7 +67,13 @@ export default function ProfileCard({
         opacity: style.opacity ?? 1,
       }}
       exit={{ scale: style.scale ?? 0.95, opacity: 0 }}
-      layout
+      layout={false}
+      transition={{
+        type: "spring",
+        stiffness: 300,
+        damping: 30,
+        mass: 0.8,
+      }}
     >
       {/* Background color indicator for swipe direction */}
       <motion.div 
@@ -100,10 +107,13 @@ export default function ProfileCard({
               alt={profile.name}
               fill
               className="object-cover"
-              priority
+              priority={0 === 0}
               onError={() => setImageError(true)}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               quality={75}
+              loading={0 === 0 ? "eager" : "lazy"}
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkLzYvLy0vLi44QjY4NC43OC0tQkY/RU9NTkJCSY6NkZBJjpCNkZH/2wBDARUXFx4aHR4eHZGMJSORkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZH/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">

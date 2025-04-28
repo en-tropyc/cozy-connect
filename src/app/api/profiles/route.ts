@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import Airtable from 'airtable';
 import { Profile } from '@/lib/airtable';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Profiles to exclude from results
 const BLACKLISTED_PROFILES = [
@@ -9,21 +11,25 @@ const BLACKLISTED_PROFILES = [
 ];
 
 export async function GET() {
-  if (!process.env.AIRTABLE_API_KEY) {
-    return NextResponse.json(
-      { success: false, error: 'Missing Airtable API key configuration' },
-      { status: 500 }
-    );
-  }
-
-  if (!process.env.AIRTABLE_BASE_ID) {
-    return NextResponse.json(
-      { success: false, error: 'Missing Airtable base ID configuration' },
-      { status: 500 }
-    );
-  }
-
   try {
+    // Get the current user's session
+    const session = await getServerSession(authOptions);
+    const userEmail = session?.user?.email;
+
+    if (!process.env.AIRTABLE_API_KEY) {
+      return NextResponse.json(
+        { success: false, error: 'Missing Airtable API key configuration' },
+        { status: 500 }
+      );
+    }
+
+    if (!process.env.AIRTABLE_BASE_ID) {
+      return NextResponse.json(
+        { success: false, error: 'Missing Airtable base ID configuration' },
+        { status: 500 }
+      );
+    }
+
     const airtable = new Airtable({ 
       apiKey: process.env.AIRTABLE_API_KEY,
       endpointUrl: 'https://api.airtable.com',
@@ -32,14 +38,17 @@ export async function GET() {
     const base = airtable.base(process.env.AIRTABLE_BASE_ID);
     const tableId = 'tbl9Jj8pIUABtsXRo';
     
-    // Create OR conditions for each blacklisted profile
-    const blacklistFilter = BLACKLISTED_PROFILES
-      .map(name => `{Name 名子} = '${name}'`)
-      .join(', ');
+    // Create OR conditions for each blacklisted profile and current user
+    const excludeFilter = [
+      ...BLACKLISTED_PROFILES.map(name => `{Name 名子} = '${name}'`),
+      userEmail ? `{Cozy Connect Gmail} = '${userEmail}'` : null
+    ].filter(Boolean).join(', ');
+    
+    console.log('Fetching profiles with filter:', excludeFilter);
     
     const records = await base(tableId)
       .select({
-        filterByFormula: `NOT(OR(${blacklistFilter}))`,
+        filterByFormula: `NOT(OR(${excludeFilter}))`,
         sort: [{ field: 'Last Modified', direction: 'desc' }],
         fields: [
           'Name 名子',
@@ -60,6 +69,12 @@ export async function GET() {
         ]
       })
       .all();
+
+    console.log('Found records:', records.map(r => ({
+      name: r.fields['Name 名子'],
+      email: r.fields['Email 電子信箱'],
+      cozyConnectGmail: r.fields['Cozy Connect Gmail']
+    })));
 
     let profiles: Profile[] = records.map((record) => ({
       id: record.id,
@@ -87,10 +102,16 @@ export async function GET() {
       [profiles[i], profiles[j]] = [profiles[j], profiles[i]];
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       profiles
     });
+
+    // Add caching headers
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    response.headers.set('Vary', 'Accept');
+
+    return response;
       
   } catch (error: any) {
     console.error('Error fetching profiles:', {
