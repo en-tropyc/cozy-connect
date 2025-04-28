@@ -6,18 +6,38 @@ export default withAuth(
     // If trying to access the home page, check for profile
     if (req.nextUrl.pathname === '/') {
       try {
-        const profileResponse = await fetch(`${req.nextUrl.origin}/api/profile`, {
-          headers: {
-            cookie: req.headers.get('cookie') || ''
-          }
-        });
+        // Get the session cookie
+        const cookie = req.headers.get('cookie') || '';
         
-        if (!profileResponse.ok) {
-          // No profile found, redirect to link-or-create
+        // Make the profile check request with retries
+        let profileResponse;
+        let retries = 3;
+        
+        while (retries > 0) {
+          profileResponse = await fetch(`${req.nextUrl.origin}/api/profile`, {
+            headers: {
+              cookie,
+              'Cache-Control': 'no-cache'
+            }
+          });
+          
+          if (profileResponse.ok) {
+            break;
+          }
+          
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          retries--;
+        }
+        
+        if (!profileResponse?.ok) {
+          // If we still don't have a profile after retries, redirect to link-or-create
           return NextResponse.redirect(new URL('/auth/link-or-create', req.url));
         }
       } catch (error) {
         console.error('Error checking profile in middleware:', error);
+        // On error, allow the request to proceed to avoid redirect loops
+        return NextResponse.next();
       }
     }
     

@@ -106,7 +106,15 @@ export default function LinkProfilePage() {
         throw new Error(`Profile linking succeeded but profile check failed: ${checkResult.error}. Please try refreshing the page.`);
       }
       
-      router.push('/');
+      // Double check that the profile is properly linked
+      const doubleCheckResponse = await fetch('/api/profile');
+      const doubleCheckResult = await doubleCheckResponse.json();
+      
+      if (!doubleCheckResult.success) {
+        throw new Error('Profile check failed on second attempt. Please try refreshing the page.');
+      }
+      
+      window.location.href = '/';
     } catch (error: any) {
       setError({
         message: error.message || 'Failed to link profile',
