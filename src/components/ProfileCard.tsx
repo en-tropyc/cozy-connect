@@ -185,7 +185,11 @@ export default function ProfileCard({
             <div className="flex gap-4 pt-2">
               {profile.instagram && (
                 <a
-                  href={`https://instagram.com/${profile.instagram.replace('@', '')}`}
+                  href={
+                    profile.instagram.startsWith('http')
+                      ? profile.instagram
+                      : `https://instagram.com/${profile.instagram.replace('@', '')}`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white hover:text-blue-200 transition-colors"
