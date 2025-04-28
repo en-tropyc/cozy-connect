@@ -94,6 +94,18 @@ export default function LinkProfilePage() {
       }
 
       toast.success('Profile linked successfully!');
+      
+      // Add a delay to ensure the profile is propagated
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Check if profile exists before redirecting
+      const checkResponse = await fetch('/api/profile/check');
+      const checkResult = await checkResponse.json();
+      
+      if (!checkResult.success) {
+        throw new Error(`Profile linking succeeded but profile check failed: ${checkResult.error}. Please try refreshing the page.`);
+      }
+      
       router.push('/');
     } catch (error: any) {
       setError({
