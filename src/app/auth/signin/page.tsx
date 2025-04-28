@@ -12,28 +12,15 @@ export default function SignInPage() {
     const checkExistingProfile = async () => {
       if (session?.user?.email) {
         try {
-          // Check if user has a linked profile
-          const response = await fetch('/api/profile/check', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              email: session.user.email
-            })
-          });
+          const response = await fetch('/api/profile');
+          const data = await response.json();
 
-          if (response.ok) {
-            // User has a linked profile, redirect to home
-            console.log('Found linked profile, redirecting to home');
+          if (data.success) {
             router.push('/');
           } else {
-            // No linked profile found, show options to link or create
-            console.log('No linked profile found, showing options');
             router.push('/auth/link-or-create');
           }
         } catch (error) {
-          console.error('Error checking profile:', error);
           // On error, show options to be safe
           router.push('/auth/link-or-create');
         }
