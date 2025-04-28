@@ -201,7 +201,11 @@ export default function ProfileCard({
               )}
               {profile.linkedinLink && (
                 <a
-                  href={profile.linkedinLink}
+                  href={
+                    profile.linkedinLink.startsWith('http')
+                      ? profile.linkedinLink
+                      : `https://linkedin.com/in/${profile.linkedinLink.replace('@', '')}`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white hover:text-blue-200 transition-colors"
