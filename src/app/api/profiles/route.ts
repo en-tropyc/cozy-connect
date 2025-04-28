@@ -8,18 +8,6 @@ const BLACKLISTED_PROFILES = [
   // Add any other profiles you want to exclude here
 ];
 
-// Profiles to prioritize at the top
-const PRIORITY_PROFILES = [
-  'Cozy Cowork Cafe',
-  'Stella',
-  'Jacky Wang',
-  'cin',
-  'Mike Chuang',
-  'Dana',
-  'Melissa (Mel)',
-  'Chris Tam',
-];
-
 export async function GET() {
   if (!process.env.AIRTABLE_API_KEY) {
     return NextResponse.json(
@@ -93,42 +81,11 @@ export async function GET() {
       active: record.fields['Active'] as boolean
     }));
 
-    // Detailed logging of all profiles and their names
-    console.log('All profiles with exact names:');
-    profiles.forEach(profile => {
-      console.log(`Profile name: "${profile.name}" (${typeof profile.name})`);
-    });
-
-    console.log('\nLooking for these priority profiles:', PRIORITY_PROFILES);
-
-    // Separate priority profiles and other profiles
-    const priorityProfiles: Profile[] = [];
-    const otherProfiles: Profile[] = [];
-
-    profiles.forEach(profile => {
-      const isPriority = PRIORITY_PROFILES.includes(profile.name);
-      console.log(`Checking ${profile.name}: Priority? ${isPriority}`);
-      
-      if (isPriority) {
-        console.log(`✅ Found priority profile: ${profile.name}`);
-        priorityProfiles.push(profile);
-      } else {
-        otherProfiles.push(profile);
-      }
-    });
-
-    console.log('\nPriority profiles found:', priorityProfiles.map(p => p.name));
-    console.log('Other profiles:', otherProfiles.map(p => p.name));
-
-    // Sort priority profiles to match the order in PRIORITY_PROFILES
-    priorityProfiles.sort((a, b) => {
-      return PRIORITY_PROFILES.indexOf(a.name) - PRIORITY_PROFILES.indexOf(b.name);
-    });
-
-    // Combine priority profiles with other profiles
-    profiles = [...priorityProfiles, ...otherProfiles];
-
-    console.log('\nFinal profile order:', profiles.map(p => p.name));
+    // Shuffle the profiles using Fisher-Yates algorithm
+    for (let i = profiles.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [profiles[i], profiles[j]] = [profiles[j], profiles[i]];
+    }
 
     return NextResponse.json({
       success: true,
