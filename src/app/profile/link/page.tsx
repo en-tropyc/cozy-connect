@@ -52,7 +52,7 @@ export default function LinkProfilePage() {
       setCodeSent(true);
       if (data.isDevelopment) {
         toast.success(data.message, { duration: 10000 }); // Show for 10 seconds
-        toast('Please wait while the admin forwards you the code', { duration: 10000 });
+        toast('Please check your email for the verification code', { duration: 10000 });
       } else {
         toast.success('Verification code sent! Please check your email.');
       }
@@ -143,7 +143,7 @@ export default function LinkProfilePage() {
           {process.env.NODE_ENV === 'development' && !codeSent && (
             <div className="mb-6 p-4 rounded-md bg-blue-50 border border-blue-200">
               <p className="text-sm text-blue-700">
-                <strong>Development Mode:</strong> Verification codes will be sent to cozycowork2024@gmail.com and need to be manually forwarded to you.
+                <strong>Development Mode:</strong> Verification codes will be sent directly to your email address.
               </p>
             </div>
           )}
@@ -180,7 +180,7 @@ export default function LinkProfilePage() {
                   placeholder="Enter the code from your email"
                 />
                 <p className="mt-2 text-sm text-gray-600">
-                  A verification code has been sent to the email address associated with your profile.
+                  A verification code has been sent to your email address. Please check your inbox.
                 </p>
               </div>
             )}

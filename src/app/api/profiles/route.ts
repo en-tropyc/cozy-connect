@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import Airtable from 'airtable';
 import { Profile } from '@/lib/airtable';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Profiles to exclude from results
 const BLACKLISTED_PROFILES = [
@@ -8,34 +10,26 @@ const BLACKLISTED_PROFILES = [
   // Add any other profiles you want to exclude here
 ];
 
-// Profiles to prioritize at the top
-const PRIORITY_PROFILES = [
-  'Cozy Cowork Cafe',
-  'Stella',
-  'Jacky Wang',
-  'cin',
-  'Mike Chuang',
-  'Dana',
-  'Melissa (Mel)',
-  'Chris Tam',
-];
-
 export async function GET() {
-  if (!process.env.AIRTABLE_API_KEY) {
-    return NextResponse.json(
-      { success: false, error: 'Missing Airtable API key configuration' },
-      { status: 500 }
-    );
-  }
-
-  if (!process.env.AIRTABLE_BASE_ID) {
-    return NextResponse.json(
-      { success: false, error: 'Missing Airtable base ID configuration' },
-      { status: 500 }
-    );
-  }
-
   try {
+    // Get the current user's session
+    const session = await getServerSession(authOptions);
+    const userEmail = session?.user?.email;
+
+    if (!process.env.AIRTABLE_API_KEY) {
+      return NextResponse.json(
+        { success: false, error: 'Missing Airtable API key configuration' },
+        { status: 500 }
+      );
+    }
+
+    if (!process.env.AIRTABLE_BASE_ID) {
+      return NextResponse.json(
+        { success: false, error: 'Missing Airtable base ID configuration' },
+        { status: 500 }
+      );
+    }
+
     const airtable = new Airtable({ 
       apiKey: process.env.AIRTABLE_API_KEY,
       endpointUrl: 'https://api.airtable.com',
@@ -44,14 +38,17 @@ export async function GET() {
     const base = airtable.base(process.env.AIRTABLE_BASE_ID);
     const tableId = 'tbl9Jj8pIUABtsXRo';
     
-    // Create OR conditions for each blacklisted profile
-    const blacklistFilter = BLACKLISTED_PROFILES
-      .map(name => `{Name 名子} = '${name}'`)
-      .join(', ');
+    // Create OR conditions for each blacklisted profile and current user
+    const excludeFilter = [
+      ...BLACKLISTED_PROFILES.map(name => `{Name 名子} = '${name}'`),
+      userEmail ? `{Cozy Connect Gmail} = '${userEmail}'` : null
+    ].filter(Boolean).join(', ');
+    
+    console.log('Fetching profiles with filter:', excludeFilter);
     
     const records = await base(tableId)
       .select({
-        filterByFormula: `NOT(OR(${blacklistFilter}))`,
+        filterByFormula: `NOT(OR(${excludeFilter}))`,
         sort: [{ field: 'Last Modified', direction: 'desc' }],
         fields: [
           'Name 名子',
@@ -73,6 +70,12 @@ export async function GET() {
       })
       .all();
 
+    console.log('Found records:', records.map(r => ({
+      name: r.fields['Name 名子'],
+      email: r.fields['Email 電子信箱'],
+      cozyConnectGmail: r.fields['Cozy Connect Gmail']
+    })));
+
     let profiles: Profile[] = records.map((record) => ({
       id: record.id,
       name: record.fields['Name 名子'] as string,
@@ -93,47 +96,22 @@ export async function GET() {
       active: record.fields['Active'] as boolean
     }));
 
-    // Detailed logging of all profiles and their names
-    console.log('All profiles with exact names:');
-    profiles.forEach(profile => {
-      console.log(`Profile name: "${profile.name}" (${typeof profile.name})`);
-    });
+    // Shuffle the profiles using Fisher-Yates algorithm
+    for (let i = profiles.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [profiles[i], profiles[j]] = [profiles[j], profiles[i]];
+    }
 
-    console.log('\nLooking for these priority profiles:', PRIORITY_PROFILES);
-
-    // Separate priority profiles and other profiles
-    const priorityProfiles: Profile[] = [];
-    const otherProfiles: Profile[] = [];
-
-    profiles.forEach(profile => {
-      const isPriority = PRIORITY_PROFILES.includes(profile.name);
-      console.log(`Checking ${profile.name}: Priority? ${isPriority}`);
-      
-      if (isPriority) {
-        console.log(`✅ Found priority profile: ${profile.name}`);
-        priorityProfiles.push(profile);
-      } else {
-        otherProfiles.push(profile);
-      }
-    });
-
-    console.log('\nPriority profiles found:', priorityProfiles.map(p => p.name));
-    console.log('Other profiles:', otherProfiles.map(p => p.name));
-
-    // Sort priority profiles to match the order in PRIORITY_PROFILES
-    priorityProfiles.sort((a, b) => {
-      return PRIORITY_PROFILES.indexOf(a.name) - PRIORITY_PROFILES.indexOf(b.name);
-    });
-
-    // Combine priority profiles with other profiles
-    profiles = [...priorityProfiles, ...otherProfiles];
-
-    console.log('\nFinal profile order:', profiles.map(p => p.name));
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       profiles
     });
+
+    // Add caching headers
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    response.headers.set('Vary', 'Accept');
+
+    return response;
       
   } catch (error: any) {
     console.error('Error fetching profiles:', {

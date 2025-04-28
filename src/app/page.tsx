@@ -63,7 +63,12 @@ export default function Home() {
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [lastSwipedProfile, setLastSwipedProfile] = useState<{ profile: Profile; matchId: string | null } | null>(null);
+  const [cachedProfiles, setCachedProfiles] = useState<Profile[]>([]);
+  const [pendingSwipes, setPendingSwipes] = useState<Array<{ profileId: string; action: 'left' | 'right'; timestamp: number }>>([]);
   const CHUNK_SIZE = 10;
+  const PREFETCH_THRESHOLD = 5;
+  const BATCH_SIZE = 3;
+  const BATCH_TIMEOUT = 2000; // Process batch after 2 seconds of no activity
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -71,19 +76,73 @@ export default function Home() {
     const fetchData = async () => {
       try {
         setLoading(true);
+        console.log('Home - Fetching profiles, session status:', {
+          status,
+          userEmail: session?.user?.email
+        });
+        
         const fetchedProfiles = await getProfiles();
         
-        // Load first chunk of profiles
-        setProfiles(fetchedProfiles.slice(0, CHUNK_SIZE));
-        setHasMore(fetchedProfiles.length > CHUNK_SIZE);
-        
-        // Find the current user's profile
+        // Find and set the user's profile (for profile linking)
         if (session?.user?.email) {
-          const userProfile = fetchedProfiles.find(
-            profile => profile.cozyConnectGmail === session.user.email
-          );
-          setUserProfile(userProfile || null);
+          console.log('Home - Looking for user profile:', {
+            userEmail: session.user.email,
+            totalProfiles: fetchedProfiles.length,
+            profileEmails: fetchedProfiles.map(p => ({
+              name: p.name,
+              email: p.email,
+              cozyConnectGmail: p.cozyConnectGmail
+            }))
+          });
+
+          // First try to fetch profile directly from API
+          try {
+            console.log('Home - Fetching user profile from API');
+            const response = await fetch('/api/profile');
+            const data = await response.json();
+            console.log('Home - Profile API response:', data);
+
+            if (data.success) {
+              console.log('Home - Found user profile from API');
+              setUserProfile(data.data);
+            } else {
+              console.log('Home - No profile found from API:', data.error);
+              setUserProfile(null);
+            }
+          } catch (error) {
+            console.error('Home - Error fetching profile from API:', error);
+            setUserProfile(null);
+          }
+        } else {
+          console.log('Home - No user email in session');
         }
+
+        // Filter out the user's own profile and blacklisted profiles from the stack
+        const otherProfiles = fetchedProfiles.filter(profile => 
+          profile.cozyConnectGmail !== session?.user?.email &&
+          profile.email !== session?.user?.email
+        );
+        
+        console.log('Home - Filtered profiles:', {
+          total: fetchedProfiles.length,
+          filtered: otherProfiles.length,
+          excluded: fetchedProfiles.length - otherProfiles.length
+        });
+        
+        // Cache filtered profiles for the stack
+        setCachedProfiles(otherProfiles);
+        
+        // Load first chunk of profiles
+        setProfiles(otherProfiles.slice(0, CHUNK_SIZE));
+        setHasMore(otherProfiles.length > CHUNK_SIZE);
+
+        // Prefetch images for the first few profiles
+        otherProfiles.slice(0, 3).forEach(profile => {
+          if (profile.picture?.[0]?.url) {
+            const img = new Image();
+            img.src = profile.picture[0].url;
+          }
+        });
       } catch (err) {
         console.error('Error fetching profiles:', err);
         setError({
@@ -100,20 +159,23 @@ export default function Home() {
 
   // Load more profiles when needed
   useEffect(() => {
-    if (currentIndex >= profiles.length - 3 && hasMore) {
-      const loadMoreProfiles = async () => {
-        try {
-          const fetchedProfiles = await getProfiles();
-          const nextChunk = fetchedProfiles.slice(profiles.length, profiles.length + CHUNK_SIZE);
-          setProfiles(prev => [...prev, ...nextChunk]);
-          setHasMore(fetchedProfiles.length > profiles.length + CHUNK_SIZE);
-        } catch (err) {
-          console.error('Error loading more profiles:', err);
+    if (currentIndex >= profiles.length - PREFETCH_THRESHOLD && hasMore && cachedProfiles.length > profiles.length) {
+      // Load next chunk from cache, ensuring we don't include user's own profile
+      const nextChunk = cachedProfiles
+        .slice(profiles.length, profiles.length + CHUNK_SIZE);
+      
+      setProfiles(prev => [...prev, ...nextChunk]);
+      setHasMore(cachedProfiles.length > profiles.length + CHUNK_SIZE);
+
+      // Prefetch images for the next chunk
+      nextChunk.forEach(profile => {
+        if (profile.picture?.[0]?.url) {
+          const img = new Image();
+          img.src = profile.picture[0].url;
         }
-      };
-      loadMoreProfiles();
+      });
     }
-  }, [currentIndex, profiles.length, hasMore]);
+  }, [currentIndex, profiles.length, hasMore, cachedProfiles]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -130,106 +192,142 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex, profiles.length]);
 
+  // Process pending swipes when batch size is met or timeout occurs
+  useEffect(() => {
+    if (pendingSwipes.length === 0) return;
+
+    const processPendingSwipes = async () => {
+      const now = Date.now();
+      const oldestSwipe = pendingSwipes[0];
+      const timeWaiting = now - oldestSwipe.timestamp;
+      
+      // Process if we have enough swipes or the oldest swipe has been waiting too long
+      if (pendingSwipes.length >= BATCH_SIZE || timeWaiting >= BATCH_TIMEOUT) {
+        // Take all pending swipes
+        const swipesToProcess = [...pendingSwipes];
+        
+        try {
+          // Clear the queue optimistically
+          setPendingSwipes([]);
+
+          // Process right swipes in parallel
+          const rightSwipes = swipesToProcess.filter(swipe => swipe.action === 'right');
+          const results = await Promise.allSettled(
+            rightSwipes.map(swipe => 
+              fetch('/api/matches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ swipedProfileId: swipe.profileId }),
+              }).then(res => res.json())
+            )
+          );
+
+          // Handle results and show match notifications
+          results.forEach((result, index) => {
+            if (result.status === 'fulfilled' && result.value.isMatch) {
+              toast.custom((t) => <MatchToast />, {
+                duration: 3000,
+                position: 'bottom-center',
+                style: { background: 'transparent', boxShadow: 'none' },
+              });
+            } else if (result.status === 'rejected') {
+              console.error('Failed to process swipe:', result.reason);
+              // Add failed swipe back to queue
+              setPendingSwipes(prev => [...prev, rightSwipes[index]]);
+            }
+          });
+        } catch (error) {
+          console.error('Error processing swipes:', error);
+          // On catastrophic error, add all swipes back to queue
+          setPendingSwipes(prev => [...prev, ...swipesToProcess]);
+        }
+      }
+    };
+
+    // Set up timer to check for pending swipes
+    const timer = setInterval(processPendingSwipes, Math.min(BATCH_TIMEOUT / 2, 1000));
+    
+    // Process immediately if batch size is met
+    if (pendingSwipes.length >= BATCH_SIZE) {
+      processPendingSwipes();
+    }
+
+    return () => clearInterval(timer);
+  }, [pendingSwipes]);
+
   const handleSwipeLeft = () => {
-    setLastSwipedProfile(null);
+    const currentProfile = profiles[currentIndex];
+    
+    // Optimistically update UI
+    setCurrentIndex(prev => prev + 1);
+    setPendingSwipes(prev => [...prev, { 
+      profileId: currentProfile.id, 
+      action: 'left',
+      timestamp: Date.now()
+    }]);
+    
+    // Show toast immediately
     toast('Not interested', { 
       icon: '❌',
       position: 'bottom-center',
       className: 'bg-red-50 text-red-500 border border-red-100'
     });
-    setCurrentIndex((prev) => prev + 1);
   };
 
-  const handleSwipeRight = async () => {
-    try {
-      const currentProfile = profiles[currentIndex];
-      
-      // Create or update match in a single API call
-      const response = await fetch('/api/matches', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          swipedProfileId: currentProfile.id,
-        }),
-      });
-
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to process match');
-      }
-
-      // Store the last swiped profile and match ID
-      setLastSwipedProfile({
-        profile: currentProfile,
-        matchId: data.matchId
-      });
-
-      // If it's a match, show the animation
-      if (data.isMatch) {
-        setProfiles(prev => prev.map(profile => 
-          profile.id === currentProfile.id ? { ...profile, isMatch: true } : profile
-        ));
-
-        toast.custom((t) => <MatchToast />, {
-          duration: 3000,
-          position: 'bottom-center',
-          style: {
-            background: 'transparent',
-            boxShadow: 'none',
-          }
-        });
-
-        // Wait for the animation to complete before moving to the next card
-        setTimeout(() => {
-          setCurrentIndex((prev) => prev + 1);
-        }, 3000);
-      } else {
-        toast('Interested!', { 
-          icon: '❤️',
-          position: 'bottom-center',
-          className: 'bg-green-50 text-green-500 border border-green-100'
-        });
-        setCurrentIndex((prev) => prev + 1);
-      }
-    } catch (error) {
-      console.error('Error handling swipe right:', error);
-      toast.error('Failed to process match. Please try again.');
-      setCurrentIndex((prev) => prev + 1);
-    }
+  const handleSwipeRight = () => {
+    const currentProfile = profiles[currentIndex];
+    
+    // Optimistically update UI
+    setCurrentIndex(prev => prev + 1);
+    setPendingSwipes(prev => [...prev, { 
+      profileId: currentProfile.id, 
+      action: 'right',
+      timestamp: Date.now()
+    }]);
+    setLastSwipedProfile({ profile: currentProfile, matchId: null });
+    
+    // Show toast immediately
+    toast('Interested!', { 
+      icon: '❤️',
+      position: 'bottom-center',
+      className: 'bg-green-50 text-green-500 border border-green-100'
+    });
   };
 
   const handleUndo = async () => {
     if (!lastSwipedProfile) return;
 
     try {
-      // Delete the match if it exists
+      // Remove the last swipe from pending queue if it exists
+      setPendingSwipes(prev => prev.filter(swipe => swipe.profileId !== lastSwipedProfile.profile.id));
+      setCurrentIndex(prev => Math.max(0, prev - 1));
+      setLastSwipedProfile(null);
+
+      // If there was a match ID, delete it
       if (lastSwipedProfile.matchId) {
         const response = await fetch('/api/matches', {
           method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            matchId: lastSwipedProfile.matchId
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ matchId: lastSwipedProfile.matchId }),
         });
-
-        const data = await response.json();
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to undo match');
+        
+        if (!response.ok) {
+          throw new Error('Failed to delete match');
         }
       }
 
-      // Move back to the previous profile
-      setCurrentIndex((prev) => Math.max(0, prev - 1));
-      setLastSwipedProfile(null);
       toast.success('Undo successful!');
     } catch (error) {
       console.error('Error undoing match:', error);
       toast.error('Failed to undo. Please try again.');
+      
+      // Revert optimistic updates on error
+      setCurrentIndex(prev => prev + 1);
+      setPendingSwipes(prev => [...prev, { 
+        profileId: lastSwipedProfile.profile.id, 
+        action: 'right',
+        timestamp: Date.now()
+      }]);
     }
   };
 
@@ -343,33 +441,6 @@ export default function Home() {
             ))
             .reverse()}
         </AnimatePresence>
-      </div>
-      <div className="flex justify-center gap-4 mt-4">
-        <button
-          onClick={handleSwipeLeft}
-          className="p-4 rounded-full bg-white shadow-lg hover:bg-gray-100 transition-colors"
-          disabled={loading}
-        >
-          <X className="w-8 h-8 text-red-500" />
-        </button>
-        <button
-          onClick={handleUndo}
-          className={`p-4 rounded-full shadow-lg transition-colors ${
-            lastSwipedProfile 
-              ? 'bg-blue-500 hover:bg-blue-600 text-white' 
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
-          disabled={loading || !lastSwipedProfile}
-        >
-          <RotateCcw className="w-8 h-8" />
-        </button>
-        <button
-          onClick={handleSwipeRight}
-          className="p-4 rounded-full bg-white shadow-lg hover:bg-gray-100 transition-colors"
-          disabled={loading}
-        >
-          <Heart className="w-8 h-8 text-green-500" />
-        </button>
       </div>
     </main>
   );

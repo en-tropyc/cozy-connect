@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     // Check if profile already exists
     const existingProfiles = await (base as any)(PROFILES_TABLE_ID)
       .select({
-        filterByFormula: `{${FIELD_NAMES.EMAIL}} = '${userEmail}'`,
+        filterByFormula: `{${FIELD_NAMES.COZY_CONNECT_GMAIL}} = '${userEmail}'`,
       })
       .firstPage();
 
@@ -121,29 +121,55 @@ export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     const userEmail = session?.user?.email;
+    console.log('Profile check - Session:', { 
+      hasSession: !!session, 
+      userEmail,
+      sessionData: JSON.stringify(session, null, 2)
+    });
+
     if (!userEmail) {
+      console.log('Profile check - No user email in session');
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    console.log('Profile check - Searching for profile with Cozy Connect Gmail:', userEmail);
     const profiles = await (base as any)(PROFILES_TABLE_ID)
       .select({
-        filterByFormula: `{${FIELD_NAMES.EMAIL}} = '${userEmail}'`,
+        filterByFormula: `{${FIELD_NAMES.COZY_CONNECT_GMAIL}} = '${userEmail}'`,
       })
       .firstPage();
 
+    console.log('Profile check - Search results:', {
+      found: profiles.length > 0,
+      profiles: profiles.map((p: any) => ({
+        id: p.id,
+        name: p.fields[FIELD_NAMES.NAME],
+        email: p.fields[FIELD_NAMES.EMAIL],
+        cozyConnectGmail: p.fields[FIELD_NAMES.COZY_CONNECT_GMAIL]
+      }))
+    });
+
     if (profiles.length === 0) {
+      console.log('Profile check - No profile found');
       return NextResponse.json(
         { success: false, error: 'Profile not found' },
         { status: 404 }
       );
     }
 
+    console.log('Profile check - Found profile:', {
+      id: profiles[0].id,
+      name: profiles[0].fields[FIELD_NAMES.NAME],
+      email: profiles[0].fields[FIELD_NAMES.EMAIL],
+      cozyConnectGmail: profiles[0].fields[FIELD_NAMES.COZY_CONNECT_GMAIL]
+    });
+
     return NextResponse.json({ success: true, data: profiles[0] });
   } catch (error) {
-    console.error('Error fetching profile:', error);
+    console.error('Profile check - Error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch profile' },
       { status: 500 }

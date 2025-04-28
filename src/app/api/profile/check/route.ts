@@ -8,6 +8,7 @@ const PROFILES_TABLE_ID = 'tbl9Jj8pIUABtsXRo';
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
+
     if (!session?.user?.email) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },
@@ -35,7 +36,6 @@ export async function GET(request: Request) {
       profile: profiles[0]
     });
   } catch (error: any) {
-    console.error('Error checking profile:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -81,7 +81,6 @@ export async function POST(request: Request) {
       profile: profiles[0]
     });
   } catch (error: any) {
-    console.error('Error checking profile:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
