@@ -344,33 +344,6 @@ export default function Home() {
             .reverse()}
         </AnimatePresence>
       </div>
-      <div className="flex justify-center gap-4 mt-4">
-        <button
-          onClick={handleSwipeLeft}
-          className="p-4 rounded-full bg-white shadow-lg hover:bg-gray-100 transition-colors"
-          disabled={loading}
-        >
-          <X className="w-8 h-8 text-red-500" />
-        </button>
-        <button
-          onClick={handleUndo}
-          className={`p-4 rounded-full shadow-lg transition-colors ${
-            lastSwipedProfile 
-              ? 'bg-blue-500 hover:bg-blue-600 text-white' 
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
-          disabled={loading || !lastSwipedProfile}
-        >
-          <RotateCcw className="w-8 h-8" />
-        </button>
-        <button
-          onClick={handleSwipeRight}
-          className="p-4 rounded-full bg-white shadow-lg hover:bg-gray-100 transition-colors"
-          disabled={loading}
-        >
-          <Heart className="w-8 h-8 text-green-500" />
-        </button>
-      </div>
     </main>
   );
 }

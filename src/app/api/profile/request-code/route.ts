@@ -54,19 +54,7 @@ export async function POST(request: Request) {
     }
 
     const profile = profiles[0];
-    const profileEmail = profile.fields['Email 電子信箱'] as string;
-
-    if (!profileEmail) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'No email address found for this profile',
-          errorType: 'NO_EMAIL'
-        },
-        { status: 400 }
-      );
-    }
-
+    
     // Check if profile is already linked
     if (profile.fields['Cozy Connect Gmail']) {
       return NextResponse.json(
@@ -89,25 +77,20 @@ export async function POST(request: Request) {
     try {
       console.log('Attempting to send email to:', session.user.email);
       
-      // Always send to Cozy email for now since it's a paid feature
-      const toEmail = 'cozycowork2024@gmail.com';
+      const toEmail = session.user.email;
       
       const emailResponse = await resend.emails.send({
-        from: 'onboarding@resend.dev',
+        from: 'verification@cozy.zerocomputing.com',
         to: toEmail,
-        subject: `Verification Code for ${session.user.email}`,
+        subject: `Your Cozy Connect Verification Code`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1>Verification Code Request</h1>
-            <p><strong>Requested by:</strong> ${session.user.email}</p>
-            <p><strong>Profile Name:</strong> ${name}</p>
-            <p>Verification code:</p>
+            <h1>Your Verification Code</h1>
+            <p>Hello,</p>
+            <p>You requested a verification code for linking your profile "${name}" on Cozy Connect.</p>
+            <p>Your verification code is:</p>
             <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
               <span style="font-size: 24px; font-weight: bold; letter-spacing: 4px;">${verificationCode}</span>
-            </div>
-            <div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p style="color: #856404; margin: 0;"><strong>Notice:</strong></p>
-              <p style="color: #856404; margin: 10px 0 0 0;">All verification codes are sent to cozycowork2024@gmail.com. Please check this email and forward the code to ${session.user.email}.</p>
             </div>
             <p>This code will expire in 15 minutes.</p>
             <p>Best regards,<br>The Cozy Connect Team</p>
@@ -118,7 +101,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ 
         success: true,
-        message: 'Verification code sent to admin email (cozycowork2024@gmail.com). Please check this email and forward the code.'
+        message: 'Verification code sent to your email. Please check your inbox.'
       });
     } catch (error: any) {
       console.error('Error sending email:', {
