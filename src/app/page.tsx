@@ -294,43 +294,6 @@ export default function Home() {
     });
   };
 
-  const handleUndo = async () => {
-    if (!lastSwipedProfile) return;
-
-    try {
-      // Remove the last swipe from pending queue if it exists
-      setPendingSwipes(prev => prev.filter(swipe => swipe.profileId !== lastSwipedProfile.profile.id));
-      setCurrentIndex(prev => Math.max(0, prev - 1));
-      setLastSwipedProfile(null);
-
-      // If there was a match ID, delete it
-      if (lastSwipedProfile.matchId) {
-        const response = await fetch('/api/matches', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ matchId: lastSwipedProfile.matchId }),
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to delete match');
-        }
-      }
-
-      toast.success('Undo successful!');
-    } catch (error) {
-      console.error('Error undoing match:', error);
-      toast.error('Failed to undo. Please try again.');
-      
-      // Revert optimistic updates on error
-      setCurrentIndex(prev => prev + 1);
-      setPendingSwipes(prev => [...prev, { 
-        profileId: lastSwipedProfile.profile.id, 
-        action: 'right',
-        timestamp: Date.now()
-      }]);
-    }
-  };
-
   if (status === 'loading' || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">

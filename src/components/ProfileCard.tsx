@@ -16,8 +16,6 @@ interface ProfileCardProps {
     translateY?: number;
   };
   isMatch?: boolean;
-  lastSwipedProfile?: boolean;
-  onUndo?: () => void;
 }
 
 export default function ProfileCard({ 
@@ -26,9 +24,7 @@ export default function ProfileCard({
   onSwipeRight, 
   isActive, 
   style = {}, 
-  isMatch = false,
-  lastSwipedProfile = false,
-  onUndo
+  isMatch = false
 }: ProfileCardProps) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-30, 30]);
@@ -232,29 +228,6 @@ export default function ProfileCard({
               disabled={!isActive}
             >
               <XMarkIcon className="w-8 h-8 text-red-500" />
-            </button>
-            <button
-              onClick={onUndo}
-              className={`p-4 rounded-full transition-colors ${
-                lastSwipedProfile 
-                  ? 'bg-blue-500 hover:bg-blue-600 text-white' 
-                  : 'bg-white/10 text-gray-400 cursor-not-allowed'
-              }`}
-              disabled={!isActive || !lastSwipedProfile}
-            >
-              <svg
-                className="w-8 h-8"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-                />
-              </svg>
             </button>
             <button
               onClick={onSwipeRight}
