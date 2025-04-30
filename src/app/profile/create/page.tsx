@@ -166,8 +166,8 @@ export default function CreateProfilePage() {
         throw new Error(`Profile creation succeeded but profile check failed: ${checkResult.error}. Please try refreshing the page.`);
       }
       
-      // Redirect to matches page
-      router.push('/matches');
+      // Redirect to home page with a bypass parameter
+      router.push('/?newProfile=true');
     } catch (error: any) {
       console.error('Error creating profile:', error);
       toast.error(error.message || 'Failed to create profile. Please try again.');
