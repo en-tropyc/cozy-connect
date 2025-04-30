@@ -5,6 +5,11 @@ export default withAuth(
   async function middleware(req) {
     // If trying to access the home page, check for profile
     if (req.nextUrl.pathname === '/') {
+      // Skip profile check if newProfile parameter is present
+      if (req.nextUrl.searchParams.has('newProfile')) {
+        return NextResponse.next();
+      }
+      
       try {
         // Get the session cookie
         const cookie = req.headers.get('cookie') || '';
