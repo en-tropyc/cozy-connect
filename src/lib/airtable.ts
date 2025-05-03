@@ -28,6 +28,7 @@ const PROFILE_FIELDS = [
   'Short intro 簡短介紹自己',
   'LinkedIn Link',
   'Instagram',
+  'GitHub',
   'Categories/Skills 分類',
   'I am looking for 我在尋找什麼？',
   'I can offer 我可以提供什麼？'
@@ -123,6 +124,7 @@ export interface Profile {
   email?: string;              // Email 電子信箱
   cozyConnectGmail?: string;   // Cozy Connect Gmail
   instagram?: string;          // Instagram
+  github?: string;             // GitHub
   shortIntro: string;          // Short intro 簡短介紹自己
   linkedinLink?: string;       // LinkedIn Link
   companyTitle?: string;       // Company/Title 公司職稱

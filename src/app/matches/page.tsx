@@ -55,6 +55,7 @@ export default async function MatchesPage() {
         email: record.fields['Email 電子信箱'] as string,
         cozyConnectGmail: record.fields['Cozy Connect Gmail'] as string,
         instagram: record.fields['Instagram'] as string,
+        github: record.fields['GitHub'] as string,
         shortIntro: record.fields['Short intro 簡短介紹自己'] as string,
         linkedinLink: record.fields['LinkedIn Link'] as string,
         categories: record.fields['Categories/Skills 分類'] as string[],
