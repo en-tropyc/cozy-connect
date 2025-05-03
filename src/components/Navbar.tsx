@@ -33,6 +33,12 @@ export function Navbar() {
                   Matches
                 </Link>
                 <Link
+                  href="/profile/edit"
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Profile
+                </Link>
+                <Link
                   href="/api/auth/signout"
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
                 >

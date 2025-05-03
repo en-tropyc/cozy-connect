@@ -128,11 +128,11 @@ export interface Profile {
   shortIntro: string;          // Short intro 簡短介紹自己
   linkedinLink?: string;       // LinkedIn Link
   companyTitle?: string;       // Company/Title 公司職稱
-  picture?: {                  // Picture 照片
-    id: string;
-    url: string;
-    filename: string;
-    type: string;
+  picture?: { // Make properties optional or use a simpler type for updates
+    id?: string; // Make optional
+    url: string; // Keep url required
+    filename?: string; // Make optional
+    type?: string; // Make optional
   }[];
   categories?: string[];       // Categories/Skills 分類
   lookingFor?: string;        // I am looking for 我在尋找什麼？
@@ -163,4 +163,53 @@ export const getProfiles = async (): Promise<Profile[]> => {
     console.error('Error fetching profiles:', error);
     throw error;
   }
-}; 
+};
+
+// Utility function to update a user profile
+export async function updateUserProfile(recordId: string, dataToUpdate: Partial<Profile>) {
+  if (!base) throw new Error('Airtable base not initialized');
+  if (!recordId) throw new Error('Missing record ID for update');
+
+  // Map Profile fields back to Airtable field names if necessary
+  // Note: This example assumes direct mapping. Adjust if Airtable names differ significantly.
+  // We need to be careful about the 'picture' field structure.
+  const fieldsToUpdate: { [key: string]: any } = {};
+
+  // Map standard fields (ensure keys exist in dataToUpdate before adding)
+  if (dataToUpdate.hasOwnProperty('name')) fieldsToUpdate['Name 名子'] = dataToUpdate.name;
+  if (dataToUpdate.hasOwnProperty('shortIntro')) fieldsToUpdate['Short intro 簡短介紹自己'] = dataToUpdate.shortIntro;
+  if (dataToUpdate.hasOwnProperty('companyTitle')) fieldsToUpdate['Company/Title 公司職稱'] = dataToUpdate.companyTitle;
+  if (dataToUpdate.hasOwnProperty('location')) fieldsToUpdate['🌏 Where are you from? 你從哪裡來？'] = dataToUpdate.location; // Map from form's 'fromLocation' via API payload
+  if (dataToUpdate.hasOwnProperty('github')) fieldsToUpdate['GitHub'] = dataToUpdate.github; // Map from form's 'githubUrl' via API payload
+  if (dataToUpdate.hasOwnProperty('instagram')) fieldsToUpdate['Instagram'] = dataToUpdate.instagram;
+  if (dataToUpdate.hasOwnProperty('linkedinLink')) fieldsToUpdate['LinkedIn Link'] = dataToUpdate.linkedinLink;
+  if (dataToUpdate.hasOwnProperty('categories')) fieldsToUpdate['Categories/Skills 分類'] = dataToUpdate.categories;
+  if (dataToUpdate.hasOwnProperty('lookingFor')) fieldsToUpdate['I am looking for 我在尋找什麼？'] = dataToUpdate.lookingFor;
+  if (dataToUpdate.hasOwnProperty('canOffer')) fieldsToUpdate['I can offer 我可以提供什麼？'] = dataToUpdate.canOffer;
+  if (dataToUpdate.hasOwnProperty('openToWork')) fieldsToUpdate['I am open for work 我在找工作機會'] = dataToUpdate.openToWork;
+  if (dataToUpdate.hasOwnProperty('other')) fieldsToUpdate['Other'] = dataToUpdate.other;
+
+  // Handle picture update - expects specific Airtable format
+  if (dataToUpdate.picture && Array.isArray(dataToUpdate.picture) && dataToUpdate.picture.length > 0) {
+      // Assuming the API sends the correct format: [{ url: '...' }]
+      // If filename is also needed: [{ url: '...', filename: '...' }]
+      fieldsToUpdate['Picture 照片'] = dataToUpdate.picture;
+  } else if (dataToUpdate.hasOwnProperty('picture') && dataToUpdate.picture === null) {
+      // If the intention is to clear the picture
+      fieldsToUpdate['Picture 照片'] = null; // Or potentially [] depending on Airtable field setup
+  }
+   // Note: We might not need email/cozyConnectGmail update if they are fixed identifiers
+
+  console.log("Updating Airtable record:", recordId, "with fields:", fieldsToUpdate);
+
+  // Perform the update
+  const updatedRecords = await base(PROFILES_TABLE_ID).update([
+    {
+      id: recordId,
+      fields: fieldsToUpdate,
+    },
+  ]);
+
+  console.log("Airtable update response:", updatedRecords);
+  return updatedRecords[0]; // Return the updated record
+} 
