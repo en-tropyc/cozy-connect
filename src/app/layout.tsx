@@ -7,7 +7,7 @@ import { Navbar } from "@/components/Navbar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Cozy Connect - Find Your Coworking Match",
+  title: "Cozy Connect - Find Your Perfect Coworking Match",
   description: "Connect with fellow coworkers in your community through our Tinder-inspired matching platform",
 };
 
