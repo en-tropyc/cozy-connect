@@ -35,7 +35,7 @@ export function Navbar() {
               {session ? (
                 <>
                   <Link href="/matches" className={linkClasses}>Matches</Link>
-                  <Link href="/profile/edit" className={linkClasses}>Edit Profile</Link>
+                  <Link href="/profile/edit" className={linkClasses}>Profile</Link>
                   <Link href="/api/auth/signout" className={linkClasses}>Sign Out</Link>
                 </>
               ) : (
@@ -70,7 +70,7 @@ export function Navbar() {
             {session ? (
               <>
                 <Link href="/matches" className={mobileLinkClasses} onClick={toggleMobileMenu}>Matches</Link>
-                <Link href="/profile/edit" className={mobileLinkClasses} onClick={toggleMobileMenu}>Edit Profile</Link>
+                <Link href="/profile/edit" className={mobileLinkClasses} onClick={toggleMobileMenu}>Profile</Link>
                 <Link href="/api/auth/signout" className={mobileLinkClasses} onClick={toggleMobileMenu}>Sign Out</Link>
               </>
             ) : (
